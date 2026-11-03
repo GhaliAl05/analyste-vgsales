@@ -17,6 +17,11 @@
 ## Sécurité
 - Ne jamais écrire de clé d'API, de mot de passe ou de donnée personnelle dans un fichier du dépôt.
 
+## Environnement Python
+- Toujours utiliser le Python du .venv du projet (pytest y est installé).
+- Tests : `.venv\Scripts\python -m pytest -q`
+- Agent : `.venv\Scripts\python agent.py "ma question"`
+
 ## Méthode de travail
 - Avant de modifier plusieurs fichiers, explique-moi ton plan et attends mon accord.
 - Après chaque fonction écrite, explique-la-moi en quelques phrases simples.

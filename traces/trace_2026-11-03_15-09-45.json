@@ -1,0 +1,43 @@
+{
+  "question": "Quel est l'intervalle de confiance à 95 % de la moyenne des ventes mondiales des jeux de genre Sports ?",
+  "avec_outil": true,
+  "etapes": [
+    {
+      "type": "modele",
+      "prompt_eval_count": 745,
+      "eval_count": 76
+    },
+    {
+      "type": "outil",
+      "arguments": {
+        "statistique": "intervalle_confiance",
+        "colonne": "Global_Sales",
+        "filtre_colonne": "Genre",
+        "filtre_valeur": "Sports"
+      },
+      "resultat": {
+        "statistique": "intervalle_confiance",
+        "colonne": "Global_Sales",
+        "filtre": "Genre = Sports",
+        "resultat": 0.568,
+        "n": 2304,
+        "borne_basse": 0.482,
+        "borne_haute": 0.654,
+        "niveau": 95
+      }
+    },
+    {
+      "type": "modele",
+      "prompt_eval_count": 913,
+      "eval_count": 55
+    }
+  ],
+  "reponse_finale": "L'intervalle de confiance à 95 % de la moyenne des ventes mondiales des jeux de genre Sports s'étend de 0,482 à 0,654 million d'exemplaires sur 2304 jeux.",
+  "arbitre": {
+    "autorisee": true,
+    "nombres_non_justifies": [],
+    "reponse_modele": "L'intervalle de confiance à 95 % de la moyenne des ventes mondiales des jeux de genre Sports s'étend de 0,482 à 0,654 million d'exemplaires sur 2304 jeux."
+  },
+  "tours": 2,
+  "duree_secondes": 85.98
+}

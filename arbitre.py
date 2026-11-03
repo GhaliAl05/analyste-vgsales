@@ -22,13 +22,15 @@ def extraire_nombres(texte):
 
 
 def nombres_autorises(resultats_outil, question):
-    """Renvoie les nombres que la réponse a le droit de citer : "resultat" et "n" de chaque
-    résultat d'outil sans erreur, plus les nombres présents dans la question."""
+    """Renvoie les nombres que la réponse a le droit de citer : toutes les valeurs numériques
+    de chaque résultat d'outil sans erreur (resultat, n, borne_basse, borne_haute, niveau),
+    plus les nombres présents dans la question. Les textes (statistique, colonne, filtre) sont ignorés."""
     autorises = []
     for resultat in resultats_outil:
         if "erreur" not in resultat:
-            autorises.append(resultat["resultat"])
-            autorises.append(resultat["n"])
+            for valeur in resultat.values():
+                if isinstance(valeur, (int, float)):
+                    autorises.append(valeur)
     for nombre in extraire_nombres(question):
         autorises.append(nombre)
     return autorises

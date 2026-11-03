@@ -1,6 +1,7 @@
 # Tests de stats.py et de l'outil calculer (outil.py), sans appeler le modèle.
 
 import csv
+import math
 import os
 import statistics
 import sys
@@ -115,3 +116,43 @@ def test_filtre_sans_resultat():
 def test_ecart_type_un_seul_jeu():
     """L'écart-type sur un seul jeu (seul jeu de l'éditeur Valve) renvoie une erreur."""
     assert "erreur" in outil.calculer("ecart_type", "Global_Sales", "Publisher", "Valve")
+
+
+# --- Intervalle de confiance à 95 % ---
+
+def intervalle_independant(xs):
+    """Calcule l'intervalle à 95 % avec statistics et math, sans passer par stats.py."""
+    m = statistics.mean(xs)
+    marge = 1.96 * statistics.stdev(xs) / math.sqrt(len(xs))
+    return (m - marge, m + marge)
+
+
+def test_intervalle_confiance_95():
+    """Sur les nombres de 1 à 40, les bornes correspondent au calcul indépendant."""
+    xs = list(range(1, 41))
+    borne_basse, borne_haute = stats.intervalle_confiance_95(xs)
+    attendu_basse, attendu_haute = intervalle_independant(xs)
+    assert abs(borne_basse - attendu_basse) < 1e-9
+    assert abs(borne_haute - attendu_haute) < 1e-9
+
+
+def test_intervalle_confiance_sports():
+    """L'intervalle des ventes mondiales des jeux Sports correspond au calcul indépendant."""
+    ventes = []
+    for ligne in lire_csv_independant():
+        if ligne["Genre"] == "Sports":
+            ventes.append(float(ligne["Global_Sales"]))
+    attendu_basse, attendu_haute = intervalle_independant(ventes)
+    reponse = outil.calculer("intervalle_confiance", "Global_Sales", "Genre", "Sports")
+    assert reponse["borne_basse"] == round(attendu_basse, 3)
+    assert reponse["borne_haute"] == round(attendu_haute, 3)
+    assert reponse["resultat"] == round(statistics.mean(ventes), 3)
+    assert reponse["n"] == len(ventes)
+    assert reponse["niveau"] == 95
+
+
+def test_intervalle_trop_peu_de_jeux():
+    """Moins de 30 jeux (9 jeux sortis en 1980) : l'intervalle renvoie une erreur."""
+    reponse = outil.calculer("intervalle_confiance", "Global_Sales", "Year", "1980")
+    assert "erreur" in reponse
+    assert "au moins 30" in reponse["erreur"]

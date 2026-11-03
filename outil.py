@@ -10,7 +10,10 @@ DOSSIER_DONNEES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "donn
 CHEMIN_PROPRE = os.path.join(DOSSIER_DONNEES, "vgsales_propre.csv")
 
 # Les valeurs acceptées par l'outil.
-STATISTIQUES = ["nombre", "somme", "moyenne", "mediane", "ecart_type"]
+STATISTIQUES = ["nombre", "somme", "moyenne", "mediane", "ecart_type", "intervalle_confiance"]
+
+# En dessous de ce nombre de jeux, l'intervalle de confiance n'est pas fiable.
+MINIMUM_INTERVALLE = 30
 COLONNES_VENTES = ["Global_Sales", "NA_Sales", "EU_Sales", "JP_Sales", "Other_Sales"]
 COLONNES_FILTRE = ["Genre", "Platform", "Publisher", "Year"]
 
@@ -45,6 +48,9 @@ def appliquer_statistique(statistique, valeurs):
         return stats.moyenne(valeurs)
     if statistique == "mediane":
         return stats.mediane(valeurs)
+    if statistique == "intervalle_confiance":
+        # Le résultat principal d'un intervalle est la moyenne ; les bornes sont ajoutées dans calculer.
+        return stats.moyenne(valeurs)
     return stats.ecart_type(valeurs)
 
 
@@ -78,18 +84,28 @@ def calculer(statistique, colonne, filtre_colonne=None, filtre_valeur=None):
     if statistique == "ecart_type" and len(lignes) < 2:
         return {"erreur": "L'écart-type demande au moins 2 jeux, or un seul jeu correspond au filtre "
                 + texte_filtre + "."}
+    if statistique == "intervalle_confiance" and len(lignes) < MINIMUM_INTERVALLE:
+        return {"erreur": "Trop peu de jeux pour un intervalle fiable, il en faut au moins "
+                + str(MINIMUM_INTERVALLE) + " ; le filtre " + texte_filtre + " n'en donne que "
+                + str(len(lignes)) + "."}
 
     valeurs = []
     for ligne in lignes:
         valeurs.append(ligne[colonne])
 
-    return {
+    resultat = {
         "statistique": statistique,
         "colonne": colonne,
         "filtre": texte_filtre,
         "resultat": round(appliquer_statistique(statistique, valeurs), 3),
         "n": len(valeurs),
     }
+    if statistique == "intervalle_confiance":
+        borne_basse, borne_haute = stats.intervalle_confiance_95(valeurs)
+        resultat["borne_basse"] = round(borne_basse, 3)
+        resultat["borne_haute"] = round(borne_haute, 3)
+        resultat["niveau"] = 95
+    return resultat
 
 
 # Description de l'outil au format « tools » d'Ollama (servira à l'étape suivante).
@@ -98,14 +114,18 @@ DESCRIPTION_OUTIL = {
     "function": {
         "name": "calculer",
         "description": "Calcule une statistique sur les ventes de jeux vidéo (en millions d'exemplaires), "
-                       "sur tous les jeux ou sur ceux qui correspondent à un filtre.",
+                       "sur tous les jeux ou sur ceux qui correspondent à un filtre. "
+                       "Pour une question sur l'incertitude, la marge d'erreur ou un intervalle, "
+                       "utilise la statistique intervalle_confiance : elle renvoie la moyenne "
+                       "et les bornes de son intervalle de confiance à 95 % (au moins 30 jeux).",
         "parameters": {
             "type": "object",
             "properties": {
                 "statistique": {
                     "type": "string",
                     "enum": STATISTIQUES,
-                    "description": "La statistique à calculer.",
+                    "description": "La statistique à calculer. intervalle_confiance donne "
+                                   "la moyenne avec sa marge d'erreur à 95 %.",
                 },
                 "colonne": {
                     "type": "string",

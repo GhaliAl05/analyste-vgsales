@@ -87,6 +87,37 @@ def test_nombre_de_la_question_autorise():
     assert arbitre.verifier(reponse, [resultat], question)["autorisee"] is True
 
 
+# --- Intervalle de confiance : les bornes et le niveau sont des nombres autorisés ---
+
+# Le vrai résultat de l'outil pour l'intervalle de confiance des jeux Sports.
+INTERVALLE_SPORTS = {
+    "statistique": "intervalle_confiance",
+    "colonne": "Global_Sales",
+    "filtre": "Genre = Sports",
+    "resultat": 0.568,
+    "n": 2304,
+    "borne_basse": 0.482,
+    "borne_haute": 0.654,
+    "niveau": 95,
+}
+QUESTION_INTERVALLE = "Quelle est la marge d'erreur sur la moyenne des ventes des jeux Sports ?"
+
+
+def test_intervalle_bornes_autorisees():
+    """La réponse qui cite les deux bornes et « 95 % » est autorisée."""
+    reponse = ("Avec 95 % de confiance, la moyenne est entre 0,482 et 0,654 million "
+               "d'exemplaires (moyenne 0,568 sur 2304 jeux).")
+    assert arbitre.verifier(reponse, [INTERVALLE_SPORTS], QUESTION_INTERVALLE)["autorisee"] is True
+
+
+def test_intervalle_borne_inventee_bloquee():
+    """Une borne haute inventée (0,75 au lieu de 0,654) est bloquée."""
+    reponse = "Avec 95 % de confiance, la moyenne est entre 0,482 et 0,75 million d'exemplaires."
+    verdict = arbitre.verifier(reponse, [INTERVALLE_SPORTS], QUESTION_INTERVALLE)
+    assert verdict["autorisee"] is False
+    assert verdict["nombres_non_justifies"] == [0.75]
+
+
 # --- Test de triche : un faux modèle qui invente un nombre sans appeler l'outil ---
 
 def faux_modele(messages, avec_outil):
