@@ -7,6 +7,7 @@ import time
 import urllib.error
 import urllib.request
 
+from arbitre import formater_nombre, verifier
 from outil import DESCRIPTION_OUTIL, calculer
 
 # Réglages faciles à modifier.
@@ -25,7 +26,8 @@ CONSIGNE = (
     "(fichier vgsales, ventes en millions d'exemplaires, années 1980 à 2016). "
     "Tu dois TOUJOURS utiliser l'outil calculer, jamais répondre de mémoire. "
     "Quand tu as le résultat, réponds en une phrase en reprenant le nombre exact "
-    "renvoyé par l'outil et le nombre de jeux utilisés."
+    "renvoyé par l'outil et le nombre de jeux utilisés. "
+    "N'écris aucun autre nombre que ceux renvoyés par l'outil."
 )
 
 
@@ -83,14 +85,35 @@ def noter_appel_modele(etapes, reponse):
     })
 
 
+def appliquer_arbitre(reponse_modele, resultats_outil, question):
+    """Vérifie la réponse du modèle avec l'arbitre. Renvoie (réponse à afficher, informations pour la trace)."""
+    verdict = verifier(reponse_modele, resultats_outil, question)
+    infos = {
+        "autorisee": verdict["autorisee"],
+        "nombres_non_justifies": verdict["nombres_non_justifies"],
+        "reponse_modele": reponse_modele,
+    }
+    if verdict["autorisee"]:
+        return reponse_modele, infos
+    textes = []
+    for nombre in verdict["nombres_non_justifies"]:
+        textes.append(formater_nombre(nombre))
+    message = ("Réponse bloquée par l'arbitre : les nombres " + ", ".join(textes)
+               + " n'ont été calculés par aucun outil.")
+    return message, infos
+
+
 def repondre(question, avec_outil=True):
     """Pose la question au modèle (avec ou sans l'outil) et renvoie la trace complète de l'échange."""
     debut = time.perf_counter()
     etapes = []
     tours = 0
     reponse_finale = "Pas de réponse finale après " + str(TOURS_MAX) + " tours."
+    # Reste None si le modèle n'a jamais donné de réponse finale (rien à vérifier).
+    arbitre = None
 
     if avec_outil:
+        resultats_outil = []
         messages = [
             {"role": "system", "content": CONSIGNE},
             {"role": "user", "content": question},
@@ -103,10 +126,11 @@ def repondre(question, avec_outil=True):
             messages.append(message)
             appels = message.get("tool_calls")
             if not appels:
-                reponse_finale = message.get("content", "")
+                reponse_finale, arbitre = appliquer_arbitre(message.get("content", ""), resultats_outil, question)
                 break
             for appel in appels:
                 resultat = executer_appel(appel)
+                resultats_outil.append(resultat)
                 arguments = appel.get("function", {}).get("arguments")
                 print("Appel de l'outil :", json.dumps(arguments, ensure_ascii=False))
                 print("Résultat :", json.dumps(resultat, ensure_ascii=False))
@@ -128,6 +152,7 @@ def repondre(question, avec_outil=True):
         "avec_outil": avec_outil,
         "etapes": etapes,
         "reponse_finale": reponse_finale,
+        "arbitre": arbitre,
         "tours": tours,
         "duree_secondes": round(time.perf_counter() - debut, 2),
     }
