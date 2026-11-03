@@ -1,0 +1,949 @@
+ ▐▛███▛█   Claude Code v2.1.306
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~\Desktop\analyste-vgsales
+
+‼ Your login expires in 2 days · run /login to renew
+
+> Je démarre mon projet final individuel du cours Coding for AI & Data Science. 
+  Ne code encore aucune fonctionnalité : prépare seulement la structure du      
+  dépôt.                                                                        
+                                                                                
+  Le projet : un analyste de données sur le fichier donnees/vgsales_brut.csv    
+  (ventes mondiales de jeux vidéo). Un petit modèle local (Qwen3.5-4B via       
+  Ollama) répond aux questions en appelant un outil de calcul que j'écris ; un  
+  arbitre écrit en Python bloque toute réponse qui contient un chiffre non      
+  calculé par l'outil. Briques visées : 1 (outil), 3 (règle imposée par le      
+  code), 6 (données sales), 8 (incertitude), 9 (comparaison mesurée).           
+                                                                                
+  1. Crée ces fichiers, chacun avec seulement un commentaire d'une ligne qui    
+  décrit son rôle : nettoyer.py, stats.py, outil.py, arbitre.py, agent.py,      
+  benchmark.py. Crée aussi les dossiers tests/, traces/ et ai_log/ (avec un     
+  fichier .gitkeep dans chacun).                                                
+  2. Crée README.md qui commence par le titre « Analyste vgsales avec arbitre   
+  », et EVIDENCE.md avec une section vide pour chacune des briques 1, 3, 6, 8   
+  et 9.                                                                         
+  3. Crée un .gitignore qui exclut .env, .venv/, __pycache__/ et                
+  .pytest_cache/.                                                               
+  4. Crée un fichier CLAUDE.md avec ces règles, valables pour toutes nos        
+  sessions :                                                                    
+     - Python bibliothèque standard uniquement (csv, json, urllib, statistics,  
+  re, math). Pas de pandas. Seule dépendance externe autorisée : pytest.        
+     - Le code doit être le plus simple possible : je dois pouvoir expliquer    
+  chaque ligne à l'oral. Pas de classes, pas de décorateurs, pas de             
+  compréhensions imbriquées, pas d'astuces. Des fonctions courtes, chacune avec 
+  une docstring en français.                                                    
+     - Commentaires et noms de variables en français.                           
+     - Le modèle est appelé via Ollama à l'adresse http://127.0.0.1:11434,      
+  modèle qwen3.5:4b-q4_K_M, avec num_ctx = 8192.                                
+     - Ne jamais écrire de clé d'API, de mot de passe ou de donnée personnelle  
+  dans un fichier du dépôt.                                                     
+     - Avant de modifier plusieurs fichiers, explique-moi ton plan et attends   
+  mon accord.                                                                   
+     - Après chaque fonction écrite, explique-la-moi en quelques phrases        
+  simples.                                                                      
+  5. Initialise un dépôt git et fais un premier commit « Structure initiale du  
+  projet ».                                                                     
+                                                                                
+  Pour finir, montre-moi l'arborescence obtenue et le contenu de CLAUDE.md.     
+
+  Ran 3 shell commands (ctrl+o to expand)
+
+● La structure du dépôt est en place et le premier commit « Structure initiale
+  du projet » est fait (7817426). Aucune fonctionnalité n'est codée.
+
+  Arborescence
+
+  analyste-vgsales/
+  ├── .gitignore          # exclut .env, .venv/, __pycache__/, .pytest_cache/
+  ├── CLAUDE.md
+  ├── EVIDENCE.md         # sections vides : briques 1, 3, 6, 8, 9
+  ├── README.md           # « # Analyste vgsales avec arbitre »
+  ├── agent.py
+  ├── arbitre.py
+  ├── benchmark.py
+  ├── nettoyer.py
+  ├── outil.py
+  ├── stats.py
+  ├── ai_log/.gitkeep
+  ├── donnees/vgsales_brut.csv
+  ├── tests/.gitkeep
+  └── traces/.gitkeep
+
+  Chaque fichier .py contient seulement un commentaire d'une ligne, par exemple
+  arbitre.py : # Arbitre : bloque toute réponse contenant un chiffre qui n'a pas
+  été calculé par l'outil.
+
+  Contenu de CLAUDE.md
+
+  # Règles du projet (valables pour toutes les sessions)
+
+  ## Dépendances
+  - Python bibliothèque standard uniquement (csv, json, urllib, statistics, re,
+  math). Pas de pandas.
+  - Seule dépendance externe autorisée : pytest.
+
+  ## Style de code
+  - Le code doit être le plus simple possible : je dois pouvoir expliquer chaque
+  ligne à l'oral.
+  - Pas de classes, pas de décorateurs, pas de compréhensions imbriquées, pas
+  d'astuces.
+  - Des fonctions courtes, chacune avec une docstring en français.
+  - Commentaires et noms de variables en français.
+
+  ## Modèle
+  - Le modèle est appelé via Ollama à l'adresse http://127.0.0.1:11434.
+  - Modèle : qwen3.5:4b-q4_K_M, avec num_ctx = 8192.
+
+  ## Sécurité
+  - Ne jamais écrire de clé d'API, de mot de passe ou de donnée personnelle dans
+  un fichier du dépôt.
+
+  ## Méthode de travail
+  - Avant de modifier plusieurs fichiers, explique-moi ton plan et attends mon 
+  accord.
+  - Après chaque fonction écrite, explique-la-moi en quelques phrases simples.
+
+  Trois points à vérifier
+
+  - Les données sont dans le commit. donnees/vgsales_brut.csv (1,3 Mo) fait
+    partie du premier commit, pour que le projet puisse être reproduit. Si tu ne
+    veux pas versionner les données, je peux le retirer et l'ajouter au
+    .gitignore.
+  - Auteur du commit. Le commit a été signé avec l'identité git configurée sur
+    cette machine : GhaliAl05. Si ce n'est pas la tienne pour ce projet, il faut
+    la corriger avec git config user.name / git config user.email puis git 
+    commit --amend --reset-author.
+  - Fins de ligne. Git a affiché des avertissements de conversion LF → CRLF.
+    C'est le comportement normal sous Windows et ça ne pose pas de problème.
+
+✻ Cogitated for 28s · done 12:41
+
+※ recap: La structure du projet d'analyste vgsales avec arbitre est en place et le premier commit est fait, sans fonctionnalité codée. Prochaine étape : vérifier que l'auteur du commit (GhaliAl05) est bien toi, puis valider le plan pour nettoyer.py. (disable recaps in /config)
+
+> Avant d'écrire nettoyer.py, je veux comprendre les problèmes du fichier       
+  donnees/vgsales_brut.csv. N'écris aucun fichier dans le projet pour l'instant 
+  et ne nettoie rien.                                                           
+                                                                                
+  Fais un état des lieux avec un petit script temporaire (module csv            
+  uniquement) et donne-moi un rapport simple :                                  
+  1. Le nombre de lignes et les noms des colonnes.                              
+  2. Pour chaque colonne : le nombre de valeurs vides, "N/A" ou "Unknown".      
+  3. Les années présentes et le nombre de jeux par année (signale les années    
+  qui ont très peu de jeux).                                                    
+  4. Les lignes en double exact, et les jeux qui ont le même nom, la même       
+  plateforme et la même année.                                                  
+  5. Les lignes où Global_Sales ne correspond pas à la somme NA_Sales +         
+  EU_Sales + JP_Sales + Other_Sales (à 0.01 près).                              
+  6. Toute autre anomalie que tu remarques (valeurs négatives, libellés écrits  
+  de deux façons différentes, etc.).                                            
+                                                                                
+  Pour chaque problème, donne un ou deux exemples de lignes concrètes. Ne       
+  propose pas encore de solution : je déciderai moi-même des règles de          
+  nettoyage.                                                                    
+
+  Made 1 scratchpad edit +131, ran 3 shell commands (ctrl+o to expand)
+
+● État des lieux de donnees/vgsales_brut.csv
+
+  Je n'ai rien modifié dans le projet. Le script temporaire se trouve hors du
+  dépôt : C:\Users\user\AppData\Local\Temp\claude\C--Users-user-Desktop-analyste
+  -vgsales\851b2e0a-c6a5-4b26-bd49-1c74d84b8cf2\scratchpad\etat_des_lieux.py
+
+  Dans ce rapport, « ligne N » désigne le numéro de ligne dans le fichier ;
+  l'en-tête est la ligne 1.
+
+  1. Taille et colonnes
+
+  - 16 598 lignes de données, plus l'en-tête.
+  - 11 colonnes : Rank, Name, Platform, Year, Genre, Publisher, NA_Sales, 
+    EU_Sales, JP_Sales, Other_Sales, Global_Sales.
+  - Toutes les lignes ont bien 11 champs. Le fichier est en UTF-8.
+
+  2. Valeurs manquantes
+
+  ┌───────────────────┬──────┬─────┬─────────┐
+  │      Colonne      │ Vide │ N/A │ Unknown │
+  ├───────────────────┼──────┼─────┼─────────┤
+  │ Year              │ 0    │ 271 │ 0       │
+  ├───────────────────┼──────┼─────┼─────────┤
+  │ Publisher         │ 0    │ 58  │ 203     │
+  ├───────────────────┼──────┼─────┼─────────┤
+  │ Toutes les autres │ 0    │ 0   │ 0       │
+  └───────────────────┴──────┴─────┴─────────┘
+
+  - Deux marqueurs différents pour le même problème. La colonne Publisher
+    utilise à la fois N/A et Unknown.
+  - Les deux manques peuvent se cumuler. 22 lignes ont à la fois Year et
+    Publisher à N/A.
+
+  Exemples :
+  - ligne 181 : Madden NFL 2004, PS2, N/A, Sports, Electronic Arts, …
+  - ligne 472 : wwe Smackdown vs. Raw 2006, PS2, N/A, Fighting, N/A, … (Year et
+    Publisher manquants)
+  - ligne 942 : Gran Turismo Concept 2001 Tokyo, PS2, 2001, Racing, Unknown, …
+
+  3. Années
+
+  1980:    9   1990:   16   2000:  349   2010: 1259
+  1981:   46   1991:   41   2001:  482   2011: 1139
+  1982:   36   1992:   43   2002:  829   2012:  657
+  1983:   17   1993:   60   2003:  775   2013:  546
+  1984:   14   1994:  121   2004:  763   2014:  582
+  1985:   14   1995:  219   2005:  941   2015:  614
+  1986:   21   1996:  263   2006: 1008   2016:  344
+  1987:   16   1997:  289   2007: 1202   2017:    3
+  1988:   15   1998:  379   2008: 1428   2020:    1
+  1989:   17   1999:  338   2009: 1431   N/A:   271
+
+  Années avec très peu de jeux :
+  - 2017 : 3 jeux. Exemple, ligne 14394 : Phantasy Star Online 2 Episode 4: 
+    Deluxe Package, PS4, 2017.
+  - 2020 : 1 seul jeu, probablement une erreur. Ligne 5960 : Imagine: Makeup 
+    Artist, DS, 2020. La DS était déjà en fin de vie bien avant 2020.
+  - Aucune année 2018 ni 2019. L'année 2016 est aussi nettement plus faible
+    (344) que 2015 (614), ce qui laisse penser que les données s'arrêtent
+    courant 2016.
+  - 1980 à 1990 : entre 9 et 46 jeux par an. Les effectifs sont faibles, donc
+    les moyennes de ces années seront très instables.
+
+  4. Doublons
+
+  - Doublons exacts sur toute la ligne : 0. C'est seulement parce que la colonne
+    Rank diffère.
+  - Doublons en ignorant Rank : 1 paire.
+    - ligne 15001 : 15000, Wii de Asobu: Metroid Prime, Wii, N/A, Shooter, 
+      Nintendo, 0, 0, 0.02, 0, 0.02
+    - ligne 15003 : 15002, Wii de Asobu: Metroid Prime, Wii, N/A, Shooter, 
+      Nintendo, 0, 0, 0.02, 0, 0.02
+  - Même nom, même plateforme et même année : 2 groupes. Le premier est la paire
+    ci-dessus. Le second a des ventes différentes :
+    - ligne 605 : 604, Madden NFL 13, PS3, 2012, …, 2.11, 0.23, 0, 0.22, 2.56
+    - ligne 16131 : 16130, Madden NFL 13, PS3, 2012, …, 0, 0.01, 0, 0, 0.01
+
+  Le résultat est identique quand on ignore la casse et les espaces.
+
+  5. Global_Sales différent de la somme des régions (écart supérieur à 0.01)
+
+  - 10 lignes sont concernées, toutes avec un écart de 0.02 exactement.
+  - L'écart va dans les deux sens. Exemples :
+    - ligne 107 : Tekken 3, PS : somme 7.18, Global 7.16
+    - ligne 1550 : Kid Icarus: Uprising, 3DS : somme 1.26, Global 1.28
+  - Les petits écarts de 0.01 sont nombreux et passent sous la tolérance que tu
+    as fixée.
+
+  6. Autres anomalies
+
+  - Libellés d'éditeur écrits de deux façons :
+    - Bigben Interactive (13 lignes) et Big Ben Interactive (7 lignes)
+    - Milestone S.r.l. (16 lignes) et Milestone S.r.l sans point final (2
+      lignes)
+  - Noms avec un double espace : 5.
+    - ligne 3467 : FIFA: Road to  World Cup 98
+    - ligne 10929 : U-Sing  2
+  - Noms qui commencent par une minuscule : 34. La plupart sont voulus, comme
+    inFAMOUS (ligne 489) ou de Blob (ligne 2131). D'autres ressemblent à des
+    erreurs de saisie :
+    - ligne 472 : wwe Smackdown vs. Raw 2006
+    - ligne 641 : pro evolution soccer 2011
+  - Une année incohérente avec la plateforme. Ligne 15870 : Strongest Tokyo 
+    University Shogi DS, DS, 1985. La DS est sortie en 2004.
+  - Un jeu à 0 dans toutes les régions mais 0.01 en Global. Ligne 16599 : SCORE 
+    International Baja 1000: The Official Game, PS2, 2008, …, 0, 0, 0, 0, 0.01.
+  - Rank n'est pas continu. Les valeurs vont de 1 à 16 600, mais 654 et 14200
+    manquent. À partir de ces trous, Rank n'est plus égal au numéro de ligne
+    moins 1 (par exemple, la ligne 181 a le Rank 180).
+  - Faible précision des ventes. Les ventes sont en millions avec 2 décimales,
+    et 618 jeux ont exactement Global_Sales = 0.01, c'est-à-dire 10 000
+    exemplaires ou moins. C'est utile à savoir pour la brique 8 (incertitude).
+
+  Points vérifiés et sans problème :
+  - aucune valeur de vente négative, non numérique, avec une virgule ou avec
+    plus de 2 décimales ;
+  - 31 plateformes et 12 genres, chacun écrit d'une seule façon ;
+  - les lignes sont bien triées par Global_Sales décroissant.
+
+✻ Churned for 1m 5s · done 12:52
+
+※ recap: Tu construis un analyste de données sur vgsales avec un arbitre qui bloque les chiffres non calculés. L'état des lieux du CSV est terminé et rien n'a été modifié. Prochaine étape : choisir tes règles de nettoyage avant qu'on écrive nettoyer.py. (disable recaps in /config)
+
+> J'ai lu ton état des lieux. Voici MES règles de nettoyage. Écris nettoyer.py  
+  qui les applique, dans cet ordre :                                            
+                                                                                
+  1. Retirer les lignes où Year vaut "N/A" (les données sans année sont         
+  inutilisables pour les questions par période).                                
+  2. Retirer les lignes où Year est supérieur à 2016 (les données s'arrêtent en 
+  2016 : 3 jeux en 2017, 1 en 2020, aucun en 2018-2019).                        
+  3. Retirer les lignes où Platform vaut "DS" et Year est inférieur à 2004 (la  
+  DS est sortie en 2004).                                                       
+  4. Remplacer Publisher "N/A" et "Unknown" par "Inconnu".                      
+  5. Corriger les libellés d'éditeur : "Big Ben Interactive" devient "Bigben    
+  Interactive", "Milestone S.r.l" devient "Milestone S.r.l.".                   
+  6. Dans Name, remplacer les doubles espaces par un seul espace.               
+     Je garde volontairement les deux lignes Madden NFL 13 / PS3 / 2012 (ventes 
+  différentes, aucune preuve de doublon) et je ne touche pas à Global_Sales     
+  (les écarts de 0.02 sont des arrondis).                                       
+                                                                                
+  Le programme doit :                                                           
+  - lire donnees/vgsales_brut.csv avec le module csv (une liste de              
+  dictionnaires) ;                                                              
+  - appliquer chaque règle dans sa propre petite fonction, qui compte combien   
+  de lignes elle a retirées ou modifiées ;                                      
+  - écrire donnees/vgsales_propre.csv (mêmes colonnes) ;                        
+  - écrire donnees/journal_nettoyage.md : pour chaque règle, la règle, sa       
+  justification, le nombre de lignes retirées ou modifiées, et le nombre de     
+  lignes restantes ; plus une section "Règles venant d'un document" : les       
+  ventes sont en millions d'exemplaires (source : page Zenodo du jeu de         
+  données, Gregory Smith, https://zenodo.org/records/5898311) et la DS est      
+  sortie en 2004 (Nintendo) ; plus une remarque : la page Zenodo annonce des    
+  jeux à plus de 100 000 exemplaires, mais 618 jeux ont Global_Sales = 0.01,    
+  donc ce seuil n'est pas respecté dans le fichier.                             
+                                                                                
+  Écris aussi tests/test_nettoyer.py (pytest) qui vérifie sur le fichier propre 
+  : 16322 lignes ; aucune année "N/A" ni supérieure à 2016 ; aucun éditeur      
+  "N/A", "Unknown" ou "Big Ben Interactive" ; aucun nom contenant un double     
+  espace. Ajoute un test sur une petite liste de 3 lignes inventées pour la     
+  règle 1.                                                                      
+                                                                                
+  Respecte CLAUDE.md. Explique-moi d'abord ton plan, attends mon accord, puis   
+  lance le programme et les tests et montre-moi le journal produit.             
+
+● Plan pour nettoyer.py et tests/test_nettoyer.py
+
+  Comme le demande CLAUDE.md, je n'écris rien avant ton accord.
+
+  J'ai vérifié le total attendu avec l'état des lieux
+
+  16 598 lignes − 271 (Year N/A) − 4 (2017 et 2020) − 1 (DS 1985) = 16 322. Ça
+  correspond à ton test.
+
+  Effet en passant : la paire Wii de Asobu: Metroid Prime a Year N/A, donc la
+  règle 1 la retire. Plus aucun doublon ne restera à part Madden NFL 13, que tu
+  gardes volontairement.
+
+  Fichier 1 : nettoyer.py
+
+  Il contiendra uniquement des fonctions courtes, chacune avec une docstring en
+  français. Pas de classe.
+
+  Fonction: lire_csv(chemin)
+  Rôle: lit le CSV avec csv.DictReader
+  Renvoie: la liste de dictionnaires et la liste des colonnes
+  ────────────────────────────────────────
+  Fonction: retirer_annees_inconnues(lignes)
+  Rôle: règle 1 : garde les lignes où Year ≠ "N/A"
+  Renvoie: (lignes gardées, nombre retiré)
+  ────────────────────────────────────────
+  Fonction: retirer_annees_apres_2016(lignes)
+  Rôle: règle 2 : garde les lignes où int(Year) <= 2016
+  Renvoie: (lignes gardées, nombre retiré)
+  ────────────────────────────────────────
+  Fonction: retirer_ds_avant_2004(lignes)
+  Rôle: règle 3 : retire Platform "DS" avec Year < 2004
+  Renvoie: (lignes gardées, nombre retiré)
+  ────────────────────────────────────────
+  Fonction: remplacer_editeurs_inconnus(lignes)
+  Rôle: règle 4 : "N/A" et "Unknown" deviennent "Inconnu"
+  Renvoie: (lignes, nombre modifié)
+  ────────────────────────────────────────
+  Fonction: corriger_libelles_editeurs(lignes)
+  Rôle: règle 5 : un petit dictionnaire {ancien: nouveau}
+  Renvoie: (lignes, nombre modifié)
+  ────────────────────────────────────────
+  Fonction: corriger_doubles_espaces(lignes)
+  Rôle: règle 6 : une boucle while " " in nom remplace par un seul espace, ce
+  qui
+  couvre aussi un éventuel triple espace
+  Renvoie: (lignes, nombre modifié)
+  ────────────────────────────────────────
+  Fonction: ecrire_csv(chemin, lignes, colonnes)
+  Rôle: écrit donnees/vgsales_propre.csv avec csv.DictWriter, dans les mêmes
+  colonnes et le même ordre
+  Renvoie: rien
+  ────────────────────────────────────────
+  Fonction: ecrire_journal(chemin, etapes, nb_depart)
+  Rôle: écrit donnees/journal_nettoyage.md
+  Renvoie: rien
+  ────────────────────────────────────────
+  Fonction: main()
+  Rôle: enchaîne les 6 règles dans l'ordre et note les infos de chaque étape
+  Renvoie: rien
+
+  Ce que main() note pour chaque étape : le texte de la règle, sa justification,
+  le nombre de lignes retirées ou modifiées et le nombre de lignes restantes.
+  Ces infos sont rangées dans une simple liste de dictionnaires, que
+  ecrire_journal met ensuite en forme.
+
+  Le journal contiendra :
+  - une section par règle, avec ses 4 informations ;
+  - la section « Règles venant d'un document » (unité en millions d'exemplaires,
+    source Zenodo de Gregory Smith ; DS sortie en 2004 selon Nintendo) ;
+  - la remarque sur le seuil de 100 000 exemplaires, que contredisent les 618
+    jeux à 0.01.
+
+  Le programme se lance avec python nettoyer.py, grâce à un if __name__ == 
+  "__main__":.
+
+  Fichier 2 : tests/test_nettoyer.py
+
+  Tests sur le fichier propre (lu avec csv.DictReader) :
+  - test_nombre_de_lignes : 16 322 lignes ;
+  - test_annees_valides : aucune année N/A ni supérieure à 2016 ;
+  - test_editeurs_corriges : aucun éditeur N/A, Unknown ou Big Ben Interactive ;
+  - test_noms_sans_double_espace : aucun nom ne contient deux espaces de suite.
+
+  Test sur des données inventées : test_regle_1_sur_trois_lignes passe 3 lignes
+  inventées (deux avec une année, une avec N/A) à retirer_annees_inconnues. Il
+  vérifie qu'il en reste 2 et que le compteur vaut 1.
+
+  Pour que pytest trouve nettoyer.py depuis tests/, j'ajouterai deux lignes
+  simples en haut du fichier de test : sys.path reçoit le dossier parent. Le
+  chemin du CSV sera construit à partir de l'emplacement du fichier de test,
+  pour que les tests marchent quel que soit le dossier d'où on lance pytest.
+
+  Ensuite
+
+  1. Je lance python nettoyer.py, puis python -m pytest.
+  2. Je te montre le journal produit.
+  3. Je t'explique chaque fonction en quelques phrases.
+
+  Je ne fais pas de commit tant que tu ne le demandes pas.
+
+  Tu es d'accord avec ce plan ?
+
+✻ Crunched for 17s · done 12:57
+
+> D'accord avec ton plan, avec une modification : les tests doivent passer sur  
+  un clone tout neuf, même si vgsales_propre.csv n'existe pas encore. Fais en   
+  sorte que les tests sur le fichier propre appellent d'abord main() pour le    
+  régénérer à partir du fichier brut, de la façon la plus simple possible. Tu   
+  peux y aller.                                                                 
+
+● Write(nettoyer.py)
+  ⎿  Added 158 lines
+        1  # Nettoyage du fichier brut vgsales_brut.csv (données sales) v
+           ers un CSV propre.
+        2 +                                                              
+        3 +import csv                                                    
+        4 +                                                              
+        5 +CHEMIN_BRUT = "donnees/vgsales_brut.csv"                      
+        6 +CHEMIN_PROPRE = "donnees/vgsales_propre.csv"                  
+        7 +CHEMIN_JOURNAL = "donnees/journal_nettoyage.md"               
+        8 +                                                              
+        9 +                                                              
+       10 +def lire_csv(chemin):                                         
+       11 +    """Lit un fichier CSV et renvoie la liste des lignes (dict
+          +ionnaires) et la liste des colonnes."""                       
+       12 +    with open(chemin, newline="", encoding="utf-8") as fichier
+          +:                                                             
+       13 +        lecteur = csv.DictReader(fichier)                     
+       14 +        lignes = list(lecteur)                                
+       15 +        colonnes = lecteur.fieldnames                         
+       16 +    return lignes, colonnes                                   
+       17 +                                                              
+       18 +                                                              
+       19 +def retirer_annees_inconnues(lignes):                         
+       20 +    """Règle 1 : retire les lignes dont l'année vaut "N/A". Re
+          +nvoie (lignes gardées, nombre retiré)."""                     
+       21 +    gardees = []                                              
+       22 +    for ligne in lignes:                                      
+       23 +        if ligne["Year"] != "N/A":                            
+       24 +            gardees.append(ligne)                             
+       25 +    return gardees, len(lignes) - len(gardees)                
+       26 +                                                              
+       27 +                                                              
+       28 +def retirer_annees_apres_2016(lignes):                        
+       29 +    """Règle 2 : retire les lignes dont l'année est supérieure
+          + à 2016. Renvoie (lignes gardées, nombre retiré)."""          
+       30 +    gardees = []                                              
+       31 +    for ligne in lignes:                                      
+       32 +        if int(ligne["Year"]) <= 2016:                        
+       33 +            gardees.append(ligne)                             
+       34 +    return gardees, len(lignes) - len(gardees)                
+       35 +                                                              
+       36 +                                                              
+       37 +def retirer_ds_avant_2004(lignes):                            
+       38 +    """Règle 3 : retire les jeux DS datés d'avant 2004. Renvoi
+          +e (lignes gardées, nombre retiré)."""                         
+       39 +    gardees = []                                              
+       40 +    for ligne in lignes:                                      
+       41 +        if ligne["Platform"] == "DS" and int(ligne["Year"]) < 
+          +2004:                                                         
+       42 +            continue                                          
+       43 +        gardees.append(ligne)                                 
+       44 +    return gardees, len(lignes) - len(gardees)                
+       45 +                                                              
+       46 +                                                              
+       47 +def remplacer_editeurs_inconnus(lignes):                      
+       48 +    """Règle 4 : remplace l'éditeur "N/A" ou "Unknown" par "In
+          +connu". Renvoie (lignes, nombre modifié)."""                  
+       49 +    nb_modifiees = 0                                          
+       50 +    for ligne in lignes:                                      
+       51 +        if ligne["Publisher"] == "N/A" or ligne["Publisher"] =
+          += "Unknown":                                                  
+       52 +            ligne["Publisher"] = "Inconnu"                    
+       53 +            nb_modifiees = nb_modifiees + 1                   
+       54 +    return lignes, nb_modifiees                               
+       55 +                                                              
+       56 +                                                              
+       57 +def corriger_libelles_editeurs(lignes):                       
+       58 +    """Règle 5 : unifie les éditeurs écrits de deux façons. Re
+          +nvoie (lignes, nombre modifié)."""                            
+       59 +    corrections = {                                           
+       60 +        "Big Ben Interactive": "Bigben Interactive",          
+       61 +        "Milestone S.r.l": "Milestone S.r.l.",                
+       62 +    }                                                         
+       63 +    nb_modifiees = 0                                          
+       64 +    for ligne in lignes:                                      
+       65 +        if ligne["Publisher"] in corrections:                 
+       66 +            ligne["Publisher"] = corrections[ligne["Publisher"
+          +]]                                                            
+       67 +            nb_modifiees = nb_modifiees + 1                   
+       68 +    return lignes, nb_modifiees                               
+       69 +                                                              
+       70 +                                                              
+       71 +def corriger_doubles_espaces(lignes):                         
+       72 +    """Règle 6 : remplace les doubles espaces du nom par un se
+          +ul espace. Renvoie (lignes, nombre modifié)."""               
+       73 +    nb_modifiees = 0                                          
+       74 +    for ligne in lignes:                                      
+       75 +        nom = ligne["Name"]                                   
+       76 +        if "  " in nom:                                       
+       77 +            while "  " in nom:                                
+       78 +                nom = nom.replace("  ", " ")                  
+       79 +            ligne["Name"] = nom                               
+       80 +            nb_modifiees = nb_modifiees + 1                   
+       81 +    return lignes, nb_modifiees                               
+       82 +                                                              
+       83 +                                                              
+       84 +def ecrire_csv(chemin, lignes, colonnes):                     
+       85 +    """Écrit les lignes dans un fichier CSV avec les colonnes 
+          +données, dans le même ordre."""                               
+       86 +    with open(chemin, "w", newline="", encoding="utf-8") as fi
+          +chier:                                                        
+       87 +        ecrivain = csv.DictWriter(fichier, fieldnames=colonnes
+          +)                                                             
+       88 +        ecrivain.writeheader()                                
+       89 +        ecrivain.writerows(lignes)                            
+       90 +                                                              
+       91 +                                                              
+       92 +def ecrire_journal(chemin, etapes, nb_depart):                
+       93 +    """Écrit le journal de nettoyage en Markdown à partir de l
+          +a liste des étapes."""                                        
+       94 +    texte = "# Journal de nettoyage\n\n"                      
+       95 +    texte = texte + "Fichier source : `" + CHEMIN_BRUT + "` ("
+          + + str(nb_depart) + " lignes).\n"                             
+       96 +    texte = texte + "Fichier produit : `" + CHEMIN_PROPRE + "`
+          +.\n\n"                                                        
+       97 +    numero = 1                                                
+       98 +    for etape in etapes:                                      
+       99 +        texte = texte + "## Règle " + str(numero) + " : " + et
+          +ape["regle"] + "\n\n"                                         
+      100 +        texte = texte + "- Justification : " + etape["justific
+          +ation"] + "\n"                                                
+      101 +        texte = texte + "- Lignes " + etape["action"] + " : " 
+          ++ str(etape["nombre"]) + "\n"                                 
+      102 +        texte = texte + "- Lignes restantes : " + str(etape["r
+          +estantes"]) + "\n\n"                                          
+      103 +        numero = numero + 1                                   
+      104 +    texte = texte + "## Choix volontaires\n\n"                
+      105 +    texte = texte + "- Les deux lignes Madden NFL 13 / PS3 / 2
+          +012 sont gardées : ventes différentes, aucune preuve de doublo
+          +n.\n"                                                         
+      106 +    texte = texte + "- Global_Sales n'est pas modifié : les éc
+          +arts de 0.02 avec la somme des régions sont des arrondis.\n\n"
+      107 +    texte = texte + "## Règles venant d'un document\n\n"      
+      108 +    texte = texte + "- Les ventes sont en millions d'exemplair
+          +es (source : page Zenodo du jeu de données, Gregory Smith, htt
+          +ps://zenodo.org/records/5898311).\n"                          
+      109 +    texte = texte + "- La DS est sortie en 2004 (source : Nint
+          +endo).\n\n"                                                   
+      110 +    texte = texte + "## Remarque\n\n"                         
+      111 +    texte = texte + "La page Zenodo annonce des jeux à plus de
+          + 100 000 exemplaires, mais 618 jeux ont Global_Sales = 0.01 " 
+      112 +    texte = texte + "(10 000 exemplaires) : ce seuil n'est don
+          +c pas respecté dans le fichier.\n"                            
+      113 +    with open(chemin, "w", encoding="utf-8") as fichier:      
+      114 +        fichier.write(texte)                                  
+      115 +                                                              
+      116 +                                                              
+      117 +def main():                                                   
+      118 +    """Applique les 6 règles dans l'ordre, puis écrit le fichi
+          +er propre et le journal."""                                   
+      119 +    lignes, colonnes = lire_csv(CHEMIN_BRUT)                  
+      120 +    nb_depart = len(lignes)                                   
+      121 +    etapes = []                                               
+      122 +                                                              
+      123 +    lignes, nombre = retirer_annees_inconnues(lignes)         
+      124 +    etapes.append({"regle": "retirer les lignes où Year vaut \
+          +"N/A\"",                                                      
+      125 +                   "justification": "sans année, les données s
+          +ont inutilisables pour les questions par période.",           
+      126 +                   "action": "retirées", "nombre": nombre, "re
+          +stantes": len(lignes)})                                       
+      127 +                                                              
+      128 +    lignes, nombre = retirer_annees_apres_2016(lignes)        
+      129 +    etapes.append({"regle": "retirer les lignes où Year est su
+          +périeur à 2016",                                              
+      130 +                   "justification": "les données s'arrêtent en
+          + 2016 (3 jeux en 2017, 1 en 2020, aucun en 2018-2019).",      
+      131 +                   "action": "retirées", "nombre": nombre, "re
+          +stantes": len(lignes)})                                       
+      132 +                                                              
+      133 +    lignes, nombre = retirer_ds_avant_2004(lignes)            
+      134 +    etapes.append({"regle": "retirer les lignes où Platform va
+          +ut \"DS\" et Year est inférieur à 2004",                      
+      135 +                   "justification": "la DS est sortie en 2004,
+          + une date antérieure est impossible.",                        
+      136 +                   "action": "retirées", "nombre": nombre, "re
+          +stantes": len(lignes)})                                       
+      137 +                                                              
+      138 +    lignes, nombre = remplacer_editeurs_inconnus(lignes)      
+      139 +    etapes.append({"regle": "remplacer Publisher \"N/A\" et \"
+          +Unknown\" par \"Inconnu\"",                                   
+      140 +                   "justification": "deux marqueurs différents
+          + pour la même information manquante.",                        
+      141 +                   "action": "modifiées", "nombre": nombre, "r
+          +estantes": len(lignes)})                                      
+      142 +                                                              
+      143 +    lignes, nombre = corriger_libelles_editeurs(lignes)       
+      144 +    etapes.append({"regle": "\"Big Ben Interactive\" devient \
+          +"Bigben Interactive\", \"Milestone S.r.l\" devient \"Milestone
+          + S.r.l.\"",                                                   
+      145 +                   "justification": "un même éditeur écrit de 
+          +deux façons serait compté comme deux éditeurs.",              
+      146 +                   "action": "modifiées", "nombre": nombre, "r
+          +estantes": len(lignes)})                                      
+      147 +                                                              
+      148 +    lignes, nombre = corriger_doubles_espaces(lignes)         
+      149 +    etapes.append({"regle": "dans Name, remplacer les doubles 
+          +espaces par un seul espace",                                  
+      150 +                   "justification": "les doubles espaces sont 
+          +des fautes de saisie qui gênent la recherche par nom.",       
+      151 +                   "action": "modifiées", "nombre": nombre, "r
+          +estantes": len(lignes)})                                      
+      152 +                                                              
+      153 +    ecrire_csv(CHEMIN_PROPRE, lignes, colonnes)               
+      154 +    ecrire_journal(CHEMIN_JOURNAL, etapes, nb_depart)         
+      155 +    print("Nettoyage terminé :", len(lignes), "lignes écrites 
+          +dans", CHEMIN_PROPRE)                                         
+      156 +                                                              
+      157 +                                                              
+      158 +if __name__ == "__main__":                                    
+      159 +    main()                                                    
+
+● Update(nettoyer.py)
+  ⎿  Added 6 lines, removed 3 lines
+       1  # Nettoyage du fichier brut vgsales_brut.csv (données sales) ve
+          rs un CSV propre.
+       2  
+       3  import csv
+       4 +import os                                                      
+       5  
+       5 -CHEMIN_BRUT = "donnees/vgsales_brut.csv"                       
+       6 -CHEMIN_PROPRE = "donnees/vgsales_propre.csv"                   
+       7 -CHEMIN_JOURNAL = "donnees/journal_nettoyage.md"                
+       6 +# Les chemins partent du dossier de ce fichier, pour marcher qu
+         +el que soit le dossier courant.                                
+       7 +DOSSIER_DONNEES = os.path.join(os.path.dirname(os.path.abspath(
+         +__file__)), "donnees")                                         
+       8 +CHEMIN_BRUT = os.path.join(DOSSIER_DONNEES, "vgsales_brut.csv")
+       9 +CHEMIN_PROPRE = os.path.join(DOSSIER_DONNEES, "vgsales_propre.c
+         +sv")                                                           
+      10 +CHEMIN_JOURNAL = os.path.join(DOSSIER_DONNEES, "journal_nettoya
+         +ge.md")                                                        
+      11  
+      12  
+      13  def lire_csv(chemin):
+
+● Update(nettoyer.py)
+  ⎿  Added 2 lines, removed 2 lines
+       95  def ecrire_journal(chemin, etapes, nb_depart):
+       96      """Écrit le journal de nettoyage en Markdown à partir de l
+           a liste des étapes."""
+       97      texte = "# Journal de nettoyage\n\n"
+       98 -    texte = texte + "Fichier source : `" + CHEMIN_BRUT + "` ("
+          - + str(nb_depart) + " lignes).\n"                             
+       99 -    texte = texte + "Fichier produit : `" + CHEMIN_PROPRE + "`
+          -.\n\n"                                                        
+       98 +    texte = texte + "Fichier source : `donnees/vgsales_brut.cs
+          +v` (" + str(nb_depart) + " lignes).\n"                        
+       99 +    texte = texte + "Fichier produit : `donnees/vgsales_propre
+          +.csv`.\n\n"                                                   
+      100      numero = 1
+      101      for etape in etapes:
+      102          texte = texte + "## Règle " + str(numero) + " : " + et
+           ape["regle"] + "\n\n"
+
+● Write(tests\test_nettoyer.py)
+  ⎿  Wrote 58 lines to tests\test_nettoyer.py
+      1 # Tests du nettoyage : fichier propre régénéré par main(), et règ
+        le 1 sur des lignes inventées.
+      2 
+      4 import sys
+      5 
+      6 # Permet d'importer nettoyer.py, qui se trouve dans le dossier pa
+        rent.
+        h(__file__))))
+      8 
+      9 import nettoyer
+     … +54 lines (ctrl+o to expand)
+
+● Je simule un clone neuf : je supprime le fichier propre avant de lancer les
+  tests.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● pytest n'est pas installé. Je l'installe dans un environnement virtuel .venv
+  (déjà exclu par .gitignore) pour ne pas toucher au Python global.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● J'ai écrit nettoyer.py et tests/test_nettoyer.py : les 5 tests passent. Je les
+  ai lancés après avoir supprimé vgsales_propre.csv et le journal, comme sur un
+  clone neuf. Le fichier propre contient bien 16 322 lignes, et le journal
+  produit est affiché plus haut.
+
+  Ce que j'ai dû ajouter
+
+  - pytest n'était pas installé. Je l'ai installé dans un environnement virtuel
+    .venv, déjà exclu par .gitignore. Les tests se lancent avec
+    .venv/Scripts/python -m pytest.
+  - J'ai ajouté le module os, qui ne figure pas dans la liste de CLAUDE.md mais
+    fait partie de la bibliothèque standard. Il sert seulement à construire les
+    chemins à partir du dossier de nettoyer.py. Sans lui, main() ne trouverait
+    pas donnees/ si pytest est lancé depuis un autre dossier. Si tu préfères
+    t'en passer, je reviens à des chemins relatifs simples, mais il faudra alors
+    toujours lancer depuis la racine du projet.
+
+  Deux chiffres à connaître avant de valider
+
+  - Règle 4 : 136 éditeurs modifiés, et non 261. Beaucoup de lignes avec un
+    éditeur N/A ou Unknown avaient aussi une année N/A, et la règle 1 les a déjà
+    retirées.
+  - La remarque du journal parle du fichier brut. On y compte bien 618 jeux à
+    Global_Sales = 0.01, mais il n'en reste que 603 dans le fichier propre. Je
+    peux préciser « 618 dans le brut, 603 après nettoyage » si tu veux.
+
+  Explication de chaque fonction
+
+  - lire_csv(chemin) ouvre le fichier et le lit avec csv.DictReader, qui
+    transforme chaque ligne en dictionnaire {nom_de_colonne: valeur}. Elle
+    renvoie la liste de ces dictionnaires et la liste des colonnes, pour
+    réécrire ensuite le fichier dans le même ordre.
+  - retirer_annees_inconnues(lignes) parcourt les lignes et ne garde que celles
+    dont l'année n'est pas "N/A". Le nombre de lignes retirées est la différence
+    entre la taille avant et la taille après.
+  - retirer_annees_apres_2016(lignes) fonctionne de la même façon. Elle
+    convertit l'année en entier avec int() pour la comparer à 2016, ce qui ne
+    pose pas de problème puisque la règle 1 a déjà retiré les "N/A".
+  - retirer_ds_avant_2004(lignes) saute avec continue les lignes qui sont à la
+    fois sur DS et datées d'avant 2004. Elle garde toutes les autres.
+  - remplacer_editeurs_inconnus(lignes) ne retire rien. Elle remplace l'éditeur
+    "N/A" ou "Unknown" par "Inconnu" et compte une modification à chaque fois.
+  - corriger_libelles_editeurs(lignes) utilise un petit dictionnaire {ancien 
+    libellé: nouveau libellé}. Si l'éditeur d'une ligne est une clé du
+    dictionnaire, elle le remplace par la valeur correspondante.
+  - corriger_doubles_espaces(lignes) remplace "  " par " " tant qu'il reste des
+    doubles espaces dans le nom, ce qui règle aussi un éventuel triple espace.
+    Elle compte une seule modification par nom corrigé.
+  - ecrire_csv(chemin, lignes, colonnes) écrit l'en-tête puis toutes les lignes
+    avec csv.DictWriter, dans le même ordre de colonnes que le fichier brut.
+  - ecrire_journal(chemin, etapes, nb_depart) construit le texte Markdown
+    morceau par morceau : une section par règle, puis tes choix volontaires, les
+    sources et la remarque. Elle écrit ensuite ce texte dans le fichier.
+  - main() appelle les 6 règles dans l'ordre. Après chacune, elle ajoute à la
+    liste etapes un dictionnaire avec le texte de la règle, sa justification, le
+    nombre de lignes touchées et le nombre restant. Elle écrit enfin le CSV
+    propre et le journal.
+
+  Dans les tests :
+  - lire_fichier_propre() appelle d'abord nettoyer.main(), ce qui régénère le
+    fichier propre depuis le brut, puis le relit. Chaque test sur le fichier
+    propre passe par elle, donc les tests marchent même si vgsales_propre.csv
+    n'existe pas encore.
+  - test_regle_1_sur_trois_lignes donne 3 lignes inventées, dont une avec "N/A".
+    Il vérifie qu'il en reste 2 (Jeu A et Jeu C) et que le compteur vaut 1.
+
+  Je n'ai pas commité. Il reste à choisir si vgsales_propre.csv et
+  journal_nettoyage.md doivent être versionnés, puisque main() les régénère.
+
+✻ Brewed for 1m 45s · done 13:06
+
+※ recap: Tu construis un analyste vgsales avec un arbitre ; nettoyer.py et ses tests sont écrits, et les 5 tests passent (16 322 lignes). Prochaine étape : décider si on versionne le CSV propre et le journal, puis commiter. (disable recaps in /config)
+
+> Mes décisions :                                                               
+  1. On garde os. Ajoute-le à la liste des modules autorisés dans CLAUDE.md.    
+  2. Dans la remarque du journal, précise : 618 jeux à 0.01 dans le fichier     
+  brut, 603 après nettoyage.                                                    
+  3. On versionne vgsales_propre.csv et journal_nettoyage.md (le journal est la 
+  preuve de la brique 6).                                                       
+  4. Crée un requirements.txt qui contient seulement pytest.                    
+     Relance le nettoyage et les tests pour vérifier, puis fais un commit «     
+  Brique 6 : nettoyage des données et tests ».                                  
+
+● Update(CLAUDE.md)
+  ⎿  Added 1 line, removed 1 line
+      1  # Règles du projet (valables pour toutes les sessions)
+      2  
+      3  ## Dépendances
+      4 -- Python bibliothèque standard uniquement (csv, json, urllib, st
+        -atistics, re, math). Pas de pandas.                             
+      4 +- Python bibliothèque standard uniquement (csv, json, urllib, st
+        +atistics, re, math, os). Pas de pandas.                         
+      5  - Seule dépendance externe autorisée : pytest.
+      6  
+      7  ## Style de code
+
+● Update(nettoyer.py)
+  ⎿  Added 3 lines, removed 2 lines
+      111      texte = texte + "- Les ventes sont en millions d'exemplair
+           es (source : page Zenodo du jeu de données, Gregory Smith, htt
+           ps://zenodo.org/records/5898311).\n"
+      112      texte = texte + "- La DS est sortie en 2004 (source : Nint
+           endo).\n\n"
+      113      texte = texte + "## Remarque\n\n"
+      114 -    texte = texte + "La page Zenodo annonce des jeux à plus de
+          - 100 000 exemplaires, mais 618 jeux ont Global_Sales = 0.01 " 
+      115 -    texte = texte + "(10 000 exemplaires) : ce seuil n'est don
+          -c pas respecté dans le fichier.\n"                            
+      114 +    texte = texte + "La page Zenodo annonce des jeux à plus de
+          + 100 000 exemplaires, mais des jeux ont Global_Sales = 0.01 " 
+      115 +    texte = texte + "(10 000 exemplaires) : 618 dans le fichie
+          +r brut, 603 après nettoyage. "                                
+      116 +    texte = texte + "Ce seuil n'est donc pas respecté dans le 
+          +fichier.\n"                                                   
+      117      with open(chemin, "w", encoding="utf-8") as fichier:
+      118          fichier.write(texte)
+      119  
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Tes quatre décisions sont appliquées et le commit e3102e4 « Brique 6 :
+  nettoyage des données et tests » est fait. Avant le commit, j'ai supprimé le
+  fichier propre et le journal puis relancé les tests, comme sur un clone neuf :
+  les 5 tests passent et les deux fichiers ont été régénérés.
+
+  1. os est autorisé : CLAUDE.md liste maintenant (csv, json, urllib, 
+     statistics, re, math, os).
+  2. Remarque du journal précisée. Elle dit maintenant :
+  ▎ La page Zenodo annonce des jeux à plus de 100 000 exemplaires, mais des jeux
+  ont Global_Sales = 0.01 (10 000 exemplaires) : 618 dans le fichier brut, 603 
+  après nettoyage. Ce seuil n'est donc pas respecté dans le fichier.
+
+     Ces deux nombres sont écrits en dur dans ecrire_journal, comme le reste du
+     texte du journal. Si tu modifies les règles plus tard, il faudra les mettre
+     à jour à la main.
+  3. Fichiers versionnés : donnees/vgsales_propre.csv et
+     donnees/journal_nettoyage.md sont dans le commit.
+  4. requirements.txt créé, avec seulement pytest.
+
+  Le commit contient CLAUDE.md, nettoyer.py, requirements.txt,
+  tests/test_nettoyer.py et les deux fichiers de donnees/. Le dossier .venv/
+  reste hors du dépôt grâce au .gitignore.
+
+  Sur un clone neuf, il suffira de lancer python -m venv .venv, puis
+  .venv/Scripts/python -m pip install -r requirements.txt, puis
+  .venv/Scripts/python -m pytest.
+
+✻ Cooked for 15s · done 13:12
+
+※ recap: Tu construis un analyste vgsales où un arbitre bloque les chiffres non calculés, et la brique 6 (nettoyage et tests) est terminée et commitée. Prochaine étape : écrire stats.py, en m'expliquant d'abord quels calculs tu veux.
+> Deux choses pour clôturer la séance :                                         
+                                                                                
+  1. Remplis la section Brique 6 de EVIDENCE.md, en restant court :             
+     - Ce que je montre : de vraies données ouvertes (vgsales, Zenodo, CC BY    
+  4.0) nettoyées par 6 règles écrites, avec un journal ; deux règles viennent   
+  d'un document (ventes en millions : page Zenodo de Gregory Smith ; DS sortie  
+  en 2004 : Nintendo) ; et une contradiction relevée entre la documentation     
+  (plus de 100 000 exemplaires) et le fichier (618 jeux à 0.01).                
+     - Fichiers : nettoyer.py, donnees/vgsales_brut.csv,                        
+  donnees/vgsales_propre.csv, donnees/journal_nettoyage.md,                     
+  tests/test_nettoyer.py.                                                       
+     - Commande pour reproduire : python nettoyer.py, puis .venv/Scripts/python 
+  -m pytest.                                                                    
+     - Résultat attendu : 16 598 lignes au départ, 16 322 après nettoyage, 5    
+  tests passés.                                                                 
+  2. Crée ai_log/seance_01.md avec exactement ce texte :                        
+                                                                                
+  Séance 1 — 3 novembre 2026                                                    
+                                                                                
+  Outils : Claude Code (structure, nettoyage) ; Claude (claude.ai) pour me      
+  guider et relire les plans.                                                   
+                                                                                
+  - Test du modèle : 17 min avec réflexion (3802 tokens), 16 s sans réflexion → 
+  je reste en local.                                                            
+  - Structure + CLAUDE.md : gardé tel quel.                                     
+  - État des lieux des données : j'ai demandé un rapport SANS solution, puis    
+  j'ai choisi moi-même les 6 règles.                                            
+  - Plan de nettoyer.py : accepté, avec une correction : les tests devaient     
+  régénérer le fichier propre pour marcher sur un clone neuf.                   
+  - Chemins avec __file__ (ajout de Claude Code) : gardé, c'est la méthode du   
+  charger() du cours.                                                           
+  - Remarque du journal : corrigée pour préciser 618 (brut) / 603 (propre).     
+                                                                                
+  Puis fais un commit « EVIDENCE brique 6 et journal de la séance 1 ».          
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(EVIDENCE.md)
+  ⎿  Added 14 lines
+       6  
+       7  ## Brique 6 — Données sales
+       8  
+       9 +**Ce que je montre** : de vraies données ouvertes (vgsales, Zen
+         +odo, CC BY 4.0) nettoyées par 6 règles écrites, avec un journal
+         +.                                                              
+      10 +- Deux règles viennent d'un document : ventes en millions (page
+         + Zenodo de Gregory Smith) ; DS sortie en 2004 (Nintendo).      
+      11 +- Une contradiction relevée entre la documentation (plus de 100
+         + 000 exemplaires) et le fichier (618 jeux à 0.01).             
+      12 +                                                               
+      13 +**Fichiers** : `nettoyer.py`, `donnees/vgsales_brut.csv`, `donn
+         +ees/vgsales_propre.csv`, `donnees/journal_nettoyage.md`, `tests
+         +/test_nettoyer.py`.                                            
+      14 +                                                               
+      15 +**Commande pour reproduire** :                                 
+      16 +```                                                            
+      17 +python nettoyer.py                                             
+      18 +.venv/Scripts/python -m pytest                                 
+      19 +```                                                            
+      20 +                                                               
+      21 +**Résultat attendu** : 16 598 lignes au départ, 16 322 après ne
+         +ttoyage, 5 tests passés.                                       
+      22 +                                                               
+      23  ## Brique 8 — Incertitude
+      24  
+      25  ## Brique 9 — Comparaison mesurée
+
+● Write(ai_log\seance_01.md)
+  ⎿  Wrote 10 lines to ai_log\seance_01.md
+       1 # Séance 1 — 3 novembre 2026
+       3 Outils : Claude Code (structure, nettoyage) ; Claude (claude.ai)
+       4 
+       5 - Test du modèle : 17 min avec réflexion (3802 tokens), 16 s san
+       6 - Structure + CLAUDE.md : gardé tel quel.
+         tion, puis j'ai choisi moi-même les 6 règles.
+          devaient régénérer le fichier propre pour marcher sur un clone 
+         neuf.
+          méthode du charger() du cours.
+         (propre).
+     … +6 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● La séance est close : EVIDENCE.md et ai_log/seance_01.md sont écrits et le
+  commit 469513f « EVIDENCE brique 6 et journal de la séance 1 » est fait.
+
+  1. EVIDENCE.md : la section Brique 6 est remplie avec tes quatre éléments (ce
+     que tu montres, fichiers, commande pour reproduire, résultat attendu). Les
+     autres briques restent vides.
+  2. ai_log/seance_01.md : il contient exactement ton texte.
+
+  Avant le commit, j'ai lancé la commande pour reproduire indiquée dans EVIDENCE
+  : python nettoyer.py a écrit 16 322 lignes et les 5 tests passent. Le fichier
+  propre régénéré est identique à celui déjà versionné, donc il n'y a pas eu de
+  modification parasite.
+
+  L'arbre de travail est propre et le dépôt compte 3 commits.
+
+✻ Brewed for 11s · done 13:17
