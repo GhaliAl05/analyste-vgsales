@@ -20,6 +20,23 @@ Chaque nouvelle exécution produit une nouvelle trace dans `traces/`, et la form
 
 ## Brique 3 — Règle imposée par le code
 
+**Ce que je montre** : une règle imposée par le code et non par le prompt : aucune réponse finale ne peut contenir un nombre qui n'a pas été calculé par l'outil (tolérance de 1 % pour les arrondis).
+- Toute réponse du modèle passe obligatoirement par l'arbitre (`agent.py`, fonction `appliquer_arbitre`).
+- Un test remplace le modèle par un faux modèle qui triche (« 42 millions » sans appel d'outil) : la réponse est bloquée.
+
+**Fichiers** : `arbitre.py`, `agent.py`, `tests/test_arbitre.py`, `traces/trace_2026-11-03_14-23-46.json` (une vraie réponse autorisée par l'arbitre).
+
+**Commandes pour reproduire** :
+```
+.venv/Scripts/python -m pytest tests/test_arbitre.py
+python agent.py "Quelle est la moyenne des ventes mondiales des jeux de genre Sports ?"
+```
+Le test de triche est `test_triche_bloquee`.
+
+**Résultat attendu** : 11 tests passés ; la vraie réponse (0,568 sur 2304 jeux) est autorisée, avec `"arbitre": {"autorisee": true, ...}` dans la trace.
+
+**Ce que les tests ont révélé** : la fonction `extraire()` reprise du `comparer.py` du cours lisait « 0,568 » comme 568 (la virgule suivie de 3 chiffres était prise pour un séparateur de milliers anglais). L'arbitre aurait bloqué les bonnes réponses. J'ai retiré la virgule du premier crochet ; un test documente le cas anglais (« 2,304 » est lu 2.304).
+
 ## Brique 6 — Données sales
 
 **Ce que je montre** : de vraies données ouvertes (vgsales, Zenodo, CC BY 4.0) nettoyées par 6 règles écrites, avec un journal.
