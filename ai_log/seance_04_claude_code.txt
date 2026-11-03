@@ -1,0 +1,1401 @@
+ ▐▛███▛█   Claude Code v2.1.317
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~\Desktop\analyste-vgsales
+
+‼ Your login expires in 1 day · run /login to renew
+
+> Dernière étape : brique 9 (comparaison mesurée). Écris benchmark.py, qui      
+  compare le modèle seul et mon système (outil + arbitre) sur 10 questions à    
+  réponse connue, comme le comparer.py de mon cours.                            
+                                                                                
+  1. Les 10 questions : chacune sur une seule statistique et au plus un filtre  
+  (ce que mon outil sait faire), formulées « en millions d'exemplaires » quand  
+  ce sont des ventes. Varie les statistiques (moyenne, médiane, somme, nombre,  
+  écart-type), les colonnes de ventes et les filtres (Genre, Platform,          
+  Publisher, Year). Propose-moi la liste dans ton plan.                         
+  2. La vérité de chaque question est calculée dans benchmark.py en relisant    
+  donnees/vgsales_propre.csv avec csv et le module statistics, SANS utiliser    
+  outil.py ni stats.py (calcul indépendant).                                    
+  3. est_juste(reponse, verite) : vrai si la réponse contient un nombre         
+  (extraire_nombres de arbitre.py) à moins de 1 % de la vérité ; pour un nombre 
+  de jeux, il faut la valeur exacte. statut(trace, verite) renvoie "juste",     
+  "fausse" ou "bloquée" (réponse bloquée par l'arbitre).                        
+  4. La boucle : pour chaque essai (3 par défaut), pour chaque question, on     
+  appelle repondre(question, avec_outil=False) puis repondre(question,          
+  avec_outil=True). Après CHAQUE réponse, on réécrit resultats/benchmark.json   
+  avec tout ce qui a été obtenu jusque-là (question, mode, numéro d'essai,      
+  vérité, réponse, statut, durée, trace complète), pour ne rien perdre si le    
+  programme s'arrête. On affiche une ligne de progression à chaque réponse.     
+  5. À la fin, écrire resultats/benchmark_resume.md : un tableau question par   
+  question (nombre de réponses justes sur 3 pour chaque mode, et nombre de      
+  réponses bloquées pour le système) ; puis, pour chaque mode, le % de réponses 
+  justes de chacun des 3 essais, leur moyenne et leur écart-type (avec          
+  ecart_type de stats.py).                                                      
+  6. Options en ligne de commande, lues à la main avec sys.argv comme dans      
+  agent.py : --rapide (2 questions, 1 essai, pour vérifier que tout marche) et  
+  --essais N.                                                                   
+  7. Dans agent.py, ajoute une constante NUM_PREDICT = 512, envoyée dans les    
+  options d'Ollama pour les deux modes, pour que le modèle seul ne produise pas 
+  de textes interminables.                                                      
+  8. tests/test_benchmark.py : tests de est_juste et de statut sur des exemples 
+  inventés (bonne valeur, arrondi à moins de 1 %, valeur fausse, nombre de      
+  jeux exact ou non, réponse bloquée), sans Ollama.                             
+                                                                                
+  IMPORTANT : ne lance PAS le benchmark avec le modèle toi-même (il dure trop   
+  longtemps pour tes commandes). Lance seulement les tests pytest. Je lancerai  
+  moi-même benchmark.py --rapide puis le benchmark complet dans un autre        
+  terminal.                                                                     
+                                                                                
+  Respecte CLAUDE.md. Explique-moi d'abord ton plan, avec la liste des 10       
+  questions et leur vérité, et attends mon accord.                              
+
+  Made 1 scratchpad edit +36, searched for 1 pattern, read 5 files, ran 1 shell command (ctrl+o to expand)
+
+● Je calcule les valeurs de vérité candidates (script temporaire hors dépôt),
+  puis je te présente le plan.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Voici mon plan. Je n'ai encore rien modifié : j'ai seulement calculé les
+  vérités avec un script temporaire, hors du dépôt.
+
+  Les 10 questions et leur vérité
+
+  Chaque question commence par « Dans le jeu de données vgsales, … ». Le modèle
+  seul ne reçoit aucune consigne système, et sans cette précision il ne saurait
+  pas de quelles données on parle.
+
+  #: 1
+  Statistique: moyenne
+  Colonne: Global_Sales
+  Filtre: Genre = Racing
+  Question (fin de phrase): moyenne des ventes mondiales, en millions
+  d'exemplaires, des jeux du genre Racing ?
+  Vérité: 0,5928 (n = 1226)
+  ────────────────────────────────────────
+  #: 2
+  Statistique: médiane
+  Colonne: NA_Sales
+  Filtre: Platform = PS2
+  Question (fin de phrase): médiane des ventes en Amérique du Nord, en millions
+  d'exemplaires, des jeux sur PS2 ?
+  Vérité: 0,09 (n = 2127)
+  ────────────────────────────────────────
+  #: 3
+  Statistique: somme
+  Colonne: EU_Sales
+  Filtre: Publisher = Nintendo
+  Question (fin de phrase): somme des ventes en Europe, en millions
+  d'exemplaires, des jeux édités par Nintendo ?
+  Vérité: 418,30 (n = 696)
+  ────────────────────────────────────────
+  #: 4
+  Statistique: nombre
+  Colonne: —
+  Filtre: Year = 2008
+  Question (fin de phrase): combien de jeux sont sortis en 2008 ?
+  Vérité: 1428
+  ────────────────────────────────────────
+  #: 5
+  Statistique: écart-type
+  Colonne: JP_Sales
+  Filtre: Genre = Role-Playing
+  Question (fin de phrase): écart-type des ventes au Japon, en millions
+  d'exemplaires, des jeux du genre Role-Playing ?
+  Vérité: 0,6512 (n = 1469)
+  ────────────────────────────────────────
+  #: 6
+  Statistique: somme
+  Colonne: Global_Sales
+  Filtre: Year = 2010
+  Question (fin de phrase): somme des ventes mondiales, en millions
+  d'exemplaires, des jeux sortis en 2010 ?
+  Vérité: 600,45 (n = 1259)
+  ────────────────────────────────────────
+  #: 7
+  Statistique: moyenne
+  Colonne: Other_Sales
+  Filtre: Platform = PS3
+  Question (fin de phrase): moyenne des ventes dans les autres régions, en
+  millions d'exemplaires, des jeux sur PS3 ?
+  Vérité: 0,1080 (n = 1304)
+  ────────────────────────────────────────
+  #: 8
+  Statistique: nombre
+  Colonne: —
+  Filtre: Publisher = Electronic Arts
+  Question (fin de phrase): combien de jeux ont été édités par Electronic Arts ?
+  Vérité: 1339
+  ────────────────────────────────────────
+  #: 9
+  Statistique: médiane
+  Colonne: Global_Sales
+  Filtre: aucun
+  Question (fin de phrase): médiane des ventes mondiales, en millions
+  d'exemplaires, de tous les jeux ?
+  Vérité: 0,17 (n = 16322)
+  ────────────────────────────────────────
+  #: 10
+  Statistique: écart-type
+  Colonne: Global_Sales
+  Filtre: Platform = Wii
+  Question (fin de phrase): écart-type des ventes mondiales, en millions
+  d'exemplaires, des jeux sur Wii ?
+  Vérité: 3,1775 (n = 1290)
+
+  Les 5 statistiques apparaissent chacune 2 fois, et les 5 colonnes de ventes
+  sont toutes utilisées. Côté filtres : Genre ×2, Platform ×3, Publisher ×2,
+  Year ×2, et une question sans filtre.
+
+  Fichiers touchés (3)
+
+  1. benchmark.py (le fichier existe déjà mais ne contient qu'un commentaire).
+  J'y mets des fonctions courtes, chacune avec une docstring en français :
+  - QUESTIONS : la liste des 10 questions. Chacune est un dictionnaire avec le
+    texte, la statistique, la colonne, la colonne de filtre et la valeur de
+    filtre.
+  - lire_valeurs(colonne, filtre_colonne, filtre_valeur) : relit
+    donnees/vgsales_propre.csv avec csv et renvoie la liste des ventes (des
+    float).
+  - calculer_verite(question) : utilise len, sum, statistics.mean, median et
+    stdev, sans outil.py ni stats.py. Pour un « nombre », len renvoie un entier
+    (int).
+  - est_juste(reponse, verite) : prend les nombres avec extraire_nombres de
+    arbitre.py. Si la vérité est un entier (un nombre de jeux), il faut la
+    valeur exacte. Sinon, un écart de moins de 1 % suffit.
+  - statut(trace, verite) :
+    - « bloquée » si trace["arbitre"] existe et que autorisee vaut False ;
+    - sinon « juste » ou « fausse » selon est_juste(trace["reponse_finale"], 
+      verite).
+    - Le mode sans outil n'est jamais « bloquée ». Une réponse vide ou « Pas de
+      réponse finale » compte comme « fausse ».
+  - enregistrer_resultats(resultats) : réécrit resultats/benchmark.json après
+    chaque réponse. Le dossier est créé s'il manque.
+  - lire_options(arguments) : lit --rapide et --essais N à la main, comme dans
+    agent.py.
+  - ecrire_resume(resultats, nb_essais, questions) : écrit
+    resultats/benchmark_resume.md. Il contient :
+    - le tableau question par question : justes sur N pour le modèle seul,
+      justes sur N pour le système, et le nombre de réponses bloquées pour le
+      système ;
+    - pour chaque mode, le % de réponses justes de chaque essai, leur moyenne et
+      leur écart-type (calculé avec stats.ecart_type). Avec un seul essai
+      (--rapide), j'écris « non calculable (1 seul essai) ».
+  - main() : la double boucle (essais, puis questions), d'abord sans outil puis
+    avec outil. Une ligne de progression s'affiche à chaque réponse, par exemple
+    : [essai 1/3] question 4/10, modèle seul : juste (12.3 s).
+  - Si Ollama ne répond pas (RuntimeError ou délai dépassé), j'affiche l'erreur
+    et j'arrête proprement. Tout ce qui est déjà obtenu reste dans le JSON.
+
+  2. agent.py : j'ajoute NUM_PREDICT = 512 dans les réglages, et "num_predict": 
+  NUM_PREDICT dans les options de appeler_modele. Ces options servent aux deux
+  modes.
+
+  3. tests/test_benchmark.py : des tests sans Ollama sur des exemples inventés.
+  - est_juste :
+    - bonne valeur ;
+    - arrondi à moins de 1 % (0,593 pour 0,5928) ;
+    - valeur fausse ;
+    - écart de plus de 1 % ;
+    - écriture à la française (« 418,3 ») ;
+    - nombre de jeux exact (1428) ou faux (1427) ;
+    - réponse sans nombre.
+  - statut : trace juste, trace fausse, trace bloquée par l'arbitre, et trace du
+    modèle seul (arbitre à None).
+
+  Ensuite, je lance uniquement .venv\Scripts\python -m pytest -q. Je ne lance
+  jamais benchmark.py.
+
+  Deux points à valider
+
+  1. Ce qui compte comme juste : une réponse est « juste » si au moins un nombre
+     de la réponse tombe sur la vérité, comme tu l'as demandé. Si le modèle
+     seul cite plusieurs nombres au hasard, il peut donc « tomber juste » par
+     chance. C'est la règle demandée, je la garde, mais je le signale.
+  2. Le dossier resultats/ : je propose de le versionner comme preuve du
+     benchmark, sans l'ajouter au .gitignore.
+
+  Tu valides ce plan et ces 10 questions ?
+
+✻ Worked for 1m 24s · done 17:47
+
+> Plan et questions validés. 1) Garde la règle « au moins un nombre juste », on 
+  la citera comme limite dans l'EVIDENCE. 2) Oui, on versionne resultats/. Tu   
+  peux y aller, et lance seulement pytest à la fin.                             
+
+● Update(agent.py)
+  ⎿  Added 2 lines
+      17  TOURS_MAX = 5
+      18  REFLEXION = False
+      19  TEMPERATURE = 0.2
+      20 +# Nombre maximum de jetons produits par réponse, pour éviter le
+         +s textes interminables.                                        
+      21 +NUM_PREDICT = 512                                              
+      22  
+      23  # Le dossier des traces part du dossier de ce fichier.
+      24  DOSSIER_TRACES = os.path.join(os.path.dirname(os.path.abspath(_
+          _file__)), "traces")
+
+● Update(agent.py)
+  ⎿  Added 1 line, removed 1 line
+      42          "messages": messages,
+      43          "stream": False,
+      44          "think": REFLEXION,
+      45 -        "options": {"num_ctx": NUM_CTX, "temperature": TEMPERAT
+         -URE},                                                          
+      45 +        "options": {"num_ctx": NUM_CTX, "temperature": TEMPERAT
+         +URE, "num_predict": NUM_PREDICT},                              
+      46      }
+      47      if avec_outil:
+      48          requete["tools"] = [DESCRIPTION_OUTIL]
+
+● Write(benchmark.py)
+  ⎿  Added 255 lines
+        1  # Benchmark : compare de façon mesurée les réponses avec et sa
+           ns outil/arbitre.
+        2 +                                                              
+        3 +import csv                                                    
+        4 +import json                                                   
+        5 +import os                                                     
+        6 +import statistics                                             
+        7 +import sys                                                    
+        8 +                                                              
+        9 +import stats                                                  
+       10 +from agent import repondre                                    
+       11 +from arbitre import extraire_nombres                          
+       12 +                                                              
+       13 +# Les chemins partent du dossier de ce fichier, pour marcher q
+          +uel que soit le dossier courant.                              
+       14 +DOSSIER = os.path.dirname(os.path.abspath(__file__))          
+       15 +CHEMIN_DONNEES = os.path.join(DOSSIER, "donnees", "vgsales_pro
+          +pre.csv")                                                     
+       16 +DOSSIER_RESULTATS = os.path.join(DOSSIER, "resultats")        
+       17 +CHEMIN_JSON = os.path.join(DOSSIER_RESULTATS, "benchmark.json"
+          +)                                                             
+       18 +CHEMIN_RESUME = os.path.join(DOSSIER_RESULTATS, "benchmark_res
+          +ume.md")                                                      
+       19 +                                                              
+       20 +ESSAIS_PAR_DEFAUT = 3                                         
+       21 +DEBUT = "Dans le jeu de données vgsales, "                    
+       22 +                                                              
+       23 +# Les 10 questions : une statistique, une colonne de ventes et
+          + au plus un filtre.                                           
+       24 +QUESTIONS = [                                                 
+       25 +    {"texte": DEBUT + "quelle est la moyenne des ventes mondia
+          +les, en millions d'exemplaires, "                             
+       26 +              "des jeux du genre Racing ?",                   
+       27 +     "statistique": "moyenne", "colonne": "Global_Sales",     
+       28 +     "filtre_colonne": "Genre", "filtre_valeur": "Racing"},   
+       29 +    {"texte": DEBUT + "quelle est la médiane des ventes en Amé
+          +rique du Nord, en millions "                                  
+       30 +              "d'exemplaires, des jeux sur PS2 ?",            
+       31 +     "statistique": "mediane", "colonne": "NA_Sales",         
+       32 +     "filtre_colonne": "Platform", "filtre_valeur": "PS2"},   
+       33 +    {"texte": DEBUT + "quelle est la somme des ventes en Europ
+          +e, en millions d'exemplaires, "                               
+       34 +              "des jeux édités par Nintendo ?",               
+       35 +     "statistique": "somme", "colonne": "EU_Sales",           
+       36 +     "filtre_colonne": "Publisher", "filtre_valeur": "Nintendo
+          +"},                                                           
+       37 +    {"texte": DEBUT + "combien de jeux sont sortis en 2008 ?",
+       38 +     "statistique": "nombre", "colonne": "Global_Sales",      
+       39 +     "filtre_colonne": "Year", "filtre_valeur": "2008"},      
+       40 +    {"texte": DEBUT + "quel est l'écart-type des ventes au Jap
+          +on, en millions d'exemplaires, "                              
+       41 +              "des jeux du genre Role-Playing ?",             
+       42 +     "statistique": "ecart_type", "colonne": "JP_Sales",      
+       43 +     "filtre_colonne": "Genre", "filtre_valeur": "Role-Playing
+          +"},                                                           
+       44 +    {"texte": DEBUT + "quelle est la somme des ventes mondiale
+          +s, en millions d'exemplaires, "                               
+       45 +              "des jeux sortis en 2010 ?",                    
+       46 +     "statistique": "somme", "colonne": "Global_Sales",       
+       47 +     "filtre_colonne": "Year", "filtre_valeur": "2010"},      
+       48 +    {"texte": DEBUT + "quelle est la moyenne des ventes dans l
+          +es autres régions (hors Amérique "                            
+       49 +              "du Nord, Europe et Japon), en millions d'exempl
+          +aires, des jeux sur PS3 ?",                                   
+       50 +     "statistique": "moyenne", "colonne": "Other_Sales",      
+       51 +     "filtre_colonne": "Platform", "filtre_valeur": "PS3"},   
+       52 +    {"texte": DEBUT + "combien de jeux ont été édités par Elec
+          +tronic Arts ?",                                               
+       53 +     "statistique": "nombre", "colonne": "Global_Sales",      
+       54 +     "filtre_colonne": "Publisher", "filtre_valeur": "Electron
+          +ic Arts"},                                                    
+       55 +    {"texte": DEBUT + "quelle est la médiane des ventes mondia
+          +les, en millions d'exemplaires, "                             
+       56 +              "de tous les jeux ?",                           
+       57 +     "statistique": "mediane", "colonne": "Global_Sales",     
+       58 +     "filtre_colonne": None, "filtre_valeur": None},          
+       59 +    {"texte": DEBUT + "quel est l'écart-type des ventes mondia
+          +les, en millions d'exemplaires, "                             
+       60 +              "des jeux sur Wii ?",                           
+       61 +     "statistique": "ecart_type", "colonne": "Global_Sales",  
+       62 +     "filtre_colonne": "Platform", "filtre_valeur": "Wii"},   
+       63 +]                                                             
+       64 +                                                              
+       65 +                                                              
+       66 +def lire_valeurs(colonne, filtre_colonne, filtre_valeur):     
+       67 +    """Relit le CSV propre et renvoie les ventes (float) de la
+          + colonne, pour les jeux qui passent le filtre."""             
+       68 +    valeurs = []                                              
+       69 +    with open(CHEMIN_DONNEES, newline="", encoding="utf-8") as
+          + fichier:                                                     
+       70 +        for ligne in csv.DictReader(fichier):                 
+       71 +            if filtre_colonne is None or ligne[filtre_colonne]
+          +.lower() == filtre_valeur.lower():                            
+       72 +                valeurs.append(float(ligne[colonne]))         
+       73 +    return valeurs                                            
+       74 +                                                              
+       75 +                                                              
+       76 +def calculer_verite(question):                                
+       77 +    """Calcule la bonne réponse d'une question avec le module 
+          +statistics, sans outil.py ni stats.py.                        
+       78 +                                                              
+       79 +    Pour un nombre de jeux, renvoie un entier (int) : c'est ce
+          + qui exigera la valeur exacte.                                
+       80 +    """                                                       
+       81 +    valeurs = lire_valeurs(question["colonne"], question["filt
+          +re_colonne"], question["filtre_valeur"])                      
+       82 +    statistique = question["statistique"]                     
+       83 +    if statistique == "nombre":                               
+       84 +        return len(valeurs)                                   
+       85 +    if statistique == "somme":                                
+       86 +        return sum(valeurs)                                   
+       87 +    if statistique == "moyenne":                              
+       88 +        return statistics.mean(valeurs)                       
+       89 +    if statistique == "mediane":                              
+       90 +        return statistics.median(valeurs)                     
+       91 +    return statistics.stdev(valeurs)                          
+       92 +                                                              
+       93 +                                                              
+       94 +def est_juste(reponse, verite):                               
+       95 +    """Vrai si la réponse contient au moins un nombre égal à l
+          +a vérité.                                                     
+       96 +                                                              
+       97 +    Nombre de jeux (vérité entière) : il faut la valeur exacte
+          +.                                                             
+       98 +    Sinon : le nombre doit être à moins de 1 % de la vérité (a
+          +ccepte un arrondi honnête).                                   
+       99 +    """                                                       
+      100 +    for nombre in extraire_nombres(reponse):                  
+      101 +        if isinstance(verite, int):                           
+      102 +            if nombre == verite:                              
+      103 +                return True                                   
+      104 +        elif abs(nombre - verite) <= 0.01 * abs(verite):      
+      105 +            return True                                       
+      106 +    return False                                              
+      107 +                                                              
+      108 +                                                              
+      109 +def statut(trace, verite):                                    
+      110 +    """Renvoie "bloquée" si l'arbitre a refusé la réponse, sin
+          +on "juste" ou "fausse"."""                                    
+      111 +    arbitre = trace.get("arbitre")                            
+      112 +    if arbitre is not None and not arbitre["autorisee"]:      
+      113 +        return "bloquée"                                      
+      114 +    if est_juste(trace["reponse_finale"], verite):            
+      115 +        return "juste"                                        
+      116 +    return "fausse"                                           
+      117 +                                                              
+      118 +                                                              
+      119 +def enregistrer_resultats(resultats):                         
+      120 +    """Réécrit resultats/benchmark.json avec tous les résultat
+          +s obtenus jusque-là."""                                       
+      121 +    os.makedirs(DOSSIER_RESULTATS, exist_ok=True)             
+      122 +    with open(CHEMIN_JSON, "w", encoding="utf-8") as fichier: 
+      123 +        json.dump(resultats, fichier, indent=2, ensure_ascii=F
+          +alse)                                                         
+      124 +                                                              
+      125 +                                                              
+      126 +def lire_options(arguments):                                  
+      127 +    """Lit --rapide et --essais N dans la liste d'arguments. R
+          +envoie (rapide, nombre d'essais)."""                          
+      128 +    rapide = "--rapide" in arguments                          
+      129 +    essais = ESSAIS_PAR_DEFAUT                                
+      130 +    if rapide:                                                
+      131 +        essais = 1                                            
+      132 +    if "--essais" in arguments:                               
+      133 +        position = arguments.index("--essais")                
+      134 +        essais = int(arguments[position + 1])                 
+      135 +    return rapide, essais                                     
+      136 +                                                              
+      137 +                                                              
+      138 +def nom_mode(avec_outil):                                     
+      139 +    """Renvoie le nom lisible du mode : "systeme" avec l'outil
+          + et l'arbitre, "modele_seul" sinon."""                        
+      140 +    if avec_outil:                                            
+      141 +        return "systeme"                                      
+      142 +    return "modele_seul"                                      
+      143 +                                                              
+      144 +                                                              
+      145 +def compter(resultats, mode, valeur_statut, numero_question=No
+          +ne, essai=None):                                              
+      146 +    """Compte les résultats d'un mode qui ont ce statut, pour 
+          +une question et/ou un essai si on les donne."""               
+      147 +    total = 0                                                 
+      148 +    for resultat in resultats:                                
+      149 +        if resultat["mode"] != mode or resultat["statut"] != v
+          +aleur_statut:                                                 
+      150 +            continue                                          
+      151 +        if numero_question is not None and resultat["numero_qu
+          +estion"] != numero_question:                                  
+      152 +            continue                                          
+      153 +        if essai is not None and resultat["essai"] != essai:  
+      154 +            continue                                          
+      155 +        total = total + 1                                     
+      156 +    return total                                              
+      157 +                                                              
+      158 +                                                              
+      159 +def lignes_tableau_questions(resultats, nb_essais, questions):
+      160 +    """Renvoie les lignes Markdown du tableau question par que
+          +stion."""                                                     
+      161 +    lignes = [                                                
+      162 +        "| # | Question | Vérité | Modèle seul : justes | Syst
+          +ème : justes | Système : bloquées |",                         
+      163 +        "|---|---|---|---|---|---|",                          
+      164 +    ]                                                         
+      165 +    numero = 0                                                
+      166 +    for question in questions:                                
+      167 +        numero = numero + 1                                   
+      168 +        seul = compter(resultats, "modele_seul", "juste", nume
+          +ro_question=numero)                                           
+      169 +        systeme = compter(resultats, "systeme", "juste", numer
+          +o_question=numero)                                            
+      170 +        bloquees = compter(resultats, "systeme", "bloquée", nu
+          +mero_question=numero)                                         
+      171 +        verite = round(calculer_verite(question), 4)          
+      172 +        lignes.append("| " + str(numero) + " | " + question["t
+          +exte"] + " | " + str(verite)                                  
+      173 +                      + " | " + str(seul) + "/" + str(nb_essai
+          +s)                                                            
+      174 +                      + " | " + str(systeme) + "/" + str(nb_es
+          +sais)                                                         
+      175 +                      + " | " + str(bloquees) + "/" + str(nb_e
+          +ssais) + " |")                                                
+      176 +    return lignes                                             
+      177 +                                                              
+      178 +                                                              
+      179 +def lignes_mode(resultats, mode, nb_essais, nb_questions):    
+      180 +    """Renvoie les lignes Markdown d'un mode : % de réponses j
+          +ustes par essai, moyenne et écart-type."""                    
+      181 +    pourcentages = []                                         
+      182 +    lignes = ["### " + mode, ""]                              
+      183 +    for essai in range(1, nb_essais + 1):                     
+      184 +        justes = compter(resultats, mode, "juste", essai=essai
+          +)                                                             
+      185 +        pourcentage = 100 * justes / nb_questions             
+      186 +        pourcentages.append(pourcentage)                      
+      187 +        lignes.append("- Essai " + str(essai) + " : " + str(ro
+          +und(pourcentage, 1)) + " % de réponses justes")               
+      188 +    lignes.append("- Moyenne : " + str(round(stats.moyenne(pou
+          +rcentages), 1)) + " %")                                       
+      189 +    if len(pourcentages) < 2:                                 
+      190 +        lignes.append("- Écart-type : non calculable (1 seul e
+          +ssai)")                                                       
+      191 +    else:                                                     
+      192 +        lignes.append("- Écart-type : " + str(round(stats.ecar
+          +t_type(pourcentages), 1)) + " points")                        
+      193 +    lignes.append("")                                         
+      194 +    return lignes                                             
+      195 +                                                              
+      196 +                                                              
+      197 +def ecrire_resume(resultats, nb_essais, questions):           
+      198 +    """Écrit resultats/benchmark_resume.md : le tableau par qu
+          +estion puis le bilan de chaque mode."""                       
+      199 +    lignes = ["# Résumé du benchmark", "",                    
+      200 +              str(len(questions)) + " questions, " + str(nb_es
+          +sais) + " essai(s) par mode.", "",                            
+      201 +              "## Question par question", ""]                 
+      202 +    lignes = lignes + lignes_tableau_questions(resultats, nb_e
+          +ssais, questions)                                             
+      203 +    lignes = lignes + ["", "## Bilan par mode", ""]           
+      204 +    lignes = lignes + lignes_mode(resultats, "modele_seul", nb
+          +_essais, len(questions))                                      
+      205 +    lignes = lignes + lignes_mode(resultats, "systeme", nb_ess
+          +ais, len(questions))                                          
+      206 +    os.makedirs(DOSSIER_RESULTATS, exist_ok=True)             
+      207 +    with open(CHEMIN_RESUME, "w", encoding="utf-8") as fichier
+          +:                                                             
+      208 +        fichier.write("\n".join(lignes))                      
+      209 +                                                              
+      210 +                                                              
+      211 +def main():                                                   
+      212 +    """Pose chaque question dans les deux modes, à chaque essa
+          +i, en sauvegardant après chaque réponse."""                   
+      213 +    sys.stdout.reconfigure(encoding="utf-8")                  
+      214 +    rapide, nb_essais = lire_options(sys.argv[1:])            
+      215 +    questions = QUESTIONS                                     
+      216 +    if rapide:                                                
+      217 +        questions = QUESTIONS[:2]                             
+      218 +                                                              
+      219 +    resultats = []                                            
+      220 +    for essai in range(1, nb_essais + 1):                     
+      221 +        numero = 0                                            
+      222 +        for question in questions:                            
+      223 +            numero = numero + 1                               
+      224 +            verite = calculer_verite(question)                
+      225 +            for avec_outil in [False, True]:                  
+      226 +                try:                                          
+      227 +                    trace = repondre(question["texte"], avec_o
+          +util=avec_outil)                                              
+      228 +                except (RuntimeError, OSError) as erreur:     
+      229 +                    # OSError couvre aussi le délai d'attente 
+          +dépassé (TimeoutError).                                       
+      230 +                    print("Erreur :", erreur)                 
+      231 +                    print("Arrêt. Les résultats déjà obtenus s
+          +ont dans", CHEMIN_JSON)                                       
+      232 +                    return                                    
+      233 +                resultat = {                                  
+      234 +                    "numero_question": numero,                
+      235 +                    "question": question["texte"],            
+      236 +                    "mode": nom_mode(avec_outil),             
+      237 +                    "essai": essai,                           
+      238 +                    "verite": verite,                         
+      239 +                    "reponse": trace["reponse_finale"],       
+      240 +                    "statut": statut(trace, verite),          
+      241 +                    "duree_secondes": trace["duree_secondes"],
+      242 +                    "trace": trace,                           
+      243 +                }                                             
+      244 +                resultats.append(resultat)                    
+      245 +                enregistrer_resultats(resultats)              
+      246 +                print("[essai " + str(essai) + "/" + str(nb_es
+          +sais) + "] question "                                         
+      247 +                      + str(numero) + "/" + str(len(questions)
+          +) + ", " + resultat["mode"]                                   
+      248 +                      + " : " + resultat["statut"] + " (" + st
+          +r(resultat["duree_secondes"]) + " s)")                        
+      249 +                                                              
+      250 +    ecrire_resume(resultats, nb_essais, questions)            
+      251 +    print("Résultats :", CHEMIN_JSON)                         
+      252 +    print("Résumé :", CHEMIN_RESUME)                          
+      253 +                                                              
+      254 +                                                              
+      255 +if __name__ == "__main__":                                    
+      256 +    main()                                                    
+
+● Write(tests\test_benchmark.py)
+  ⎿  Wrote 102 lines to tests\test_benchmark.py
+      1 # Tests de benchmark.py (est_juste, statut, vérités, options), sa
+        ns appeler Ollama.
+      2 
+      3 import os
+      4 import sys
+      5 
+      6 # Permet d'importer benchmark.py, qui se trouve dans le dossier p
+        arent.
+      7 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspat
+        h(__file__))))
+     … +95 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Les tests passent. Je vérifie aussi rapidement que le résumé Markdown s'écrit
+  bien, avec des résultats inventés et dans un dossier temporaire, sans Ollama.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● J'ai écrit benchmark.py et les tests, et ajouté NUM_PREDICT dans agent.py. Les
+  53 tests passent (.venv\Scripts\python -m pytest -q). Je n'ai pas lancé le
+  benchmark avec le modèle. J'ai seulement vérifié que le résumé Markdown
+  s'écrit bien, à partir de faux résultats et dans un dossier temporaire hors du
+  dépôt.
+
+  agent.py
+
+  J'ai ajouté la constante NUM_PREDICT = 512 et l'option "num_predict": 
+  NUM_PREDICT dans appeler_modele. Comme les deux modes passent par cette
+  fonction, chaque réponse du modèle est limitée à 512 jetons, avec ou sans
+  outil.
+
+  benchmark.py, fonction par fonction
+
+  - QUESTIONS : les 10 questions validées. Chacune est un dictionnaire avec le
+    texte, la statistique, la colonne et le filtre (ou None). Toutes commencent
+    par « Dans le jeu de données vgsales, ».
+  - lire_valeurs : relit le CSV propre avec csv.DictReader. Elle garde les
+    lignes qui passent le filtre, sans tenir compte des majuscules, et renvoie
+    les ventes de la colonne en float.
+  - calculer_verite : calcule la bonne réponse avec len, sum et le module
+    statistics (mean, median, stdev), sans passer par outil.py ni stats.py. Pour
+    un nombre de jeux, len renvoie un entier, et c'est ce qui déclenche la
+    règle « valeur exacte » dans est_juste.
+  - est_juste : récupère tous les nombres de la réponse avec extraire_nombres.
+    Si la vérité est un entier, il faut l'égalité exacte ; sinon, un écart d'au
+    plus 1 % suffit. Un seul nombre juste suffit : c'est la limite à citer dans
+    l'EVIDENCE.
+  - statut : si l'arbitre existe et a refusé la réponse, le statut est « bloquée
+    ». Sinon, c'est « juste » ou « fausse » selon est_juste. Le modèle seul n'a
+    pas d'arbitre (None), donc il n'est jamais « bloquée ».
+  - enregistrer_resultats : crée resultats/ s'il manque et réécrit tout
+    benchmark.json. Elle est appelée après chaque réponse.
+  - lire_options : --rapide donne 1 essai, et main ne garde alors que les 2
+    premières questions. --essais N prend le nombre qui suit l'option et
+    l'emporte sur --rapide si on donne les deux.
+  - nom_mode : renvoie « systeme » ou « modele_seul » pour les fichiers de
+    résultats.
+  - compter : compte les résultats d'un mode qui ont un statut donné. On peut
+    limiter le compte à une question ou à un essai.
+  - lignes_tableau_questions : produit le tableau Markdown question par question
+    : vérité, justes sur N pour chaque mode, et réponses bloquées pour le
+    système.
+  - lignes_mode : pour un mode, calcule le % de réponses justes de chaque essai,
+    puis leur moyenne et leur écart-type (stats.moyenne et stats.ecart_type).
+    Avec un seul essai, elle écrit « non calculable ».
+  - ecrire_resume : assemble ces lignes dans resultats/benchmark_resume.md.
+  - main : pour chaque essai et chaque question, interroge d'abord le modèle
+    seul puis le système. Après chaque réponse, elle sauvegarde le JSON et
+    affiche une ligne de progression. Si Ollama ne répond pas (erreur ou délai
+    dépassé), elle s'arrête proprement, et le JSON contient déjà tout ce qui a
+    été obtenu.
+
+  tests/test_benchmark.py (18 tests)
+
+  - est_juste : bonne valeur, arrondi à moins de 1 %, virgule française, valeur
+    fausse, écart de plus de 1 %, nombre de jeux exact ou à 1 près, milliers
+    écrits avec une espace, réponse sans nombre.
+  - statut : juste, fausse, bloquée, et « Pas de réponse finale ».
+  - Vérités : 1428 jeux en 2008 (un entier), médiane de 0,17.
+  - Options : sans option, avec --rapide, avec --essais 5.
+
+  À lancer de ton côté
+
+  .venv\Scripts\python benchmark.py --rapide
+  .venv\Scripts\python benchmark.py
+  Je n'ai rien commité.
+
+✻ Cooked for 1m 32s · done 17:51
+
+※ recap: Pour la brique 9, j'ai écrit benchmark.py, ses tests et NUM_PREDICT dans agent.py ; les 53 tests passent et rien n'est commité. Prochaine étape pour toi : lancer `.venv\Scripts\python benchmark.py --rapide`, puis le benchmark complet. (disable recaps in /config)
+
+> Le benchmark est terminé : resultats/benchmark.json et                        
+  resultats/benchmark_resume.md (30/30 pour le système, 0/30 pour le modèle     
+  seul, aucune réponse bloquée).                                                
+                                                                                
+  1. Montre-moi le contenu de resultats/benchmark_resume.md.                    
+  2. Lis les réponses du modèle seul dans benchmark.json et classe-les par type 
+  d'erreur (chiffre inventé, refus ou « je n'ai pas accès aux données »,        
+  réponse hors sujet, etc.), avec le nombre de réponses de chaque type.         
+  3. Choisis UN échec représentatif du modèle seul et explique-le à partir de   
+  sa trace : la question, la vérité, ce que le modèle a répondu (cite 2 phrases 
+  maximum), pourquoi c'est faux ; puis ce que le système a fait sur la même     
+  question (appel d'outil, résultat, verdict de l'arbitre).                     
+  4. Remplis la section Brique 9 de EVIDENCE.md sur le même modèle que les      
+  autres :                                                                      
+     - Ce que je montre : 10 questions à réponse connue (vérité calculée        
+  indépendamment dans benchmark.py avec le module statistics), modèle seul      
+  contre mon système, 3 essais chacun, Qwen3.5-4B local.                        
+     - Le tableau des résultats : % de réponses justes par essai, moyenne ±     
+  écart-type pour chaque mode, nombre de réponses bloquées.                     
+     - Fichiers : benchmark.py, tests/test_benchmark.py,                        
+  resultats/benchmark.json, resultats/benchmark_resume.md.                      
+     - Commandes : .venv\Scripts\python benchmark.py --rapide puis              
+  .venv\Scripts\python benchmark.py (durée réelle : près de 2 heures sur mon    
+  PC, les réponses ralentissant au fil des essais).                             
+     - « Un échec expliqué » : le point 3 ci-dessus.                            
+     - « Limites de ce benchmark », en 4 points : (a) questions choisies dans   
+  le périmètre de l'outil (une statistique, un filtre) : il mesure la fiabilité 
+  sur ce type de questions, pas sur des questions hors périmètre ; (b) le       
+  modèle seul n'a pas accès au fichier : la comparaison montre l'apport de      
+  l'outil ; (c) l'arbitre n'a eu à bloquer aucune réponse ici : son efficacité  
+  est démontrée par le test de triche (brique 3) ; (d) 30/30 ne prouve pas que  
+  le système ne se trompe jamais : ce sont 3 essais des mêmes 10 questions, pas 
+  30 cas indépendants. Ajoute aussi la limite de la règle de correction (une    
+  réponse est juste si au moins un nombre correspond).                          
+  5. Ne lance AUCUN benchmark et ne commite pas encore : montre-moi la section  
+  rédigée.                                                                      
+
+  Read 2 files, ran 3 shell commands (ctrl+o to expand)
+
+● Update(EVIDENCE.md)
+  ⎿  Added 48 lines
+       76  3. Ces chiffres décrivent une association, pas une cause : ils
+            ne montrent pas que le genre Sports fait vendre davantage.
+       77  
+       78  ## Brique 9 — Comparaison mesurée
+       79 +                                                              
+       80 +**Ce que je montre** : sur 10 questions à réponse connue, le m
+          +odèle seul se trompe à chaque fois et mon système (outil + arb
+          +itre) répond juste à chaque fois.                             
+       81 +- Chaque question porte sur une seule statistique (moyenne, mé
+          +diane, somme, nombre, écart-type) avec au plus un filtre (Genr
+          +e, Platform, Publisher, Year). Les cinq colonnes de ventes son
+          +t utilisées.                                                  
+       82 +- La vérité est calculée indépendamment dans `benchmark.py` : 
+          +le CSV propre est relu avec `csv` et le module `statistics`, s
+          +ans `outil.py` ni `stats.py`.                                 
+       83 +- Les deux modes ont fait 3 essais chacun, avec le même modèle
+          + Qwen3.5-4B local (Ollama, température 0.2, 512 jetons de répo
+          +nse au plus).                                                 
+       84 +- Une réponse est juste si elle contient un nombre à moins de 
+          +1 % de la vérité. Pour un nombre de jeux, il faut la valeur ex
+          +acte.                                                         
+       85 +                                                              
+       86 +| Mode | Essai 1 | Essai 2 | Essai 3 | Moyenne ± écart-type | 
+          +Réponses bloquées |                                           
+       87 +|---|---|---|---|---|---|                                     
+       88 +| Modèle seul | 0 % | 0 % | 0 % | 0 % ± 0 | — (pas d'arbitre) 
+          +|                                                             
+       89 +| Système (outil + arbitre) | 100 % | 100 % | 100 % | 100 % ± 
+          +0 | 0 sur 30 |                                                
+       90 +                                                              
+       91 +Les 30 réponses du modèle seul se répartissent ainsi :        
+       92 +- 27 donnent un chiffre inventé, présenté comme le résultat d'
+          +un calcul sur le fichier.                                     
+       93 +- 3 sont coupées par la limite de 512 jetons avant leur conclu
+          +sion, après avoir cité des chiffres eux aussi inventés.       
+       94 +- Aucune ne dit ne pas avoir accès aux données.               
+       95 +                                                              
+       96 +**Fichiers** : `benchmark.py`, `tests/test_benchmark.py`, `res
+          +ultats/benchmark.json` (les 60 réponses avec leur trace complè
+          +te), `resultats/benchmark_resume.md`.                         
+       97 +                                                              
+       98 +**Commandes pour reproduire** :                               
+       99 +```                                                           
+      100 +.venv\Scripts\python -m pytest -q                             
+      101 +.venv\Scripts\python benchmark.py --rapide                    
+      102 +.venv\Scripts\python benchmark.py                             
+      103 +```                                                           
+      104 +Le benchmark complet a duré près de 2 heures sur mon PC, car l
+          +es réponses ralentissent au fil des essais. `--rapide` (2 ques
+          +tions, 1 essai) sert à vérifier que tout marche avant de lance
+          +r le benchmark complet.                                       
+      105 +                                                              
+      106 +**Résultat attendu** :                                        
+      107 +- Tests : 53 passés, dont 18 pour le benchmark.               
+      108 +- Benchmark : le système obtient 30 réponses justes sur 30 et 
+          +aucune bloquée ; le modèle seul obtient 0 sur 30.             
+      109 +- Le texte des réponses peut varier d'une exécution à l'autre.
+      110 +                                                              
+      111 +**Un échec expliqué** (question 1, essai 2, dans `resultats/be
+          +nchmark.json`) :                                              
+      112 +- Question : moyenne des ventes mondiales, en millions d'exemp
+          +laires, des jeux du genre Racing. Vérité : 0,5928 million, sur
+          + 1226 jeux.                                                   
+      113 +- Ce que le modèle seul répond : « Le nombre total de jeux cla
+          +ssés dans ce genre dans le jeu de données complet est de **20*
+          +*. » puis « La moyenne des ventes mondiales pour les jeux du g
+          +enre Racing est d'environ **6,925 millions** d'exemplaires. » 
+      114 +- Pourquoi c'est faux : la division 138,5 / 20 = 6,925 est jus
+          +te, mais ses deux entrées sont inventées. Il n'y a pas 20 jeux
+          + Racing mais 1226, et la colonne `World_Sales` qu'il cite n'ex
+          +iste pas. Le modèle n'a jamais vu le fichier : il imagine quel
+          +ques grands titres (Gran Turismo, Forza…), si bien que sa moye
+          +nne est 12 fois trop grande. Le ton reste assuré (« jeu de don
+          +nées complet »), rien ne signale au lecteur que les chiffres s
+          +ont inventés.                                                 
+      115 +- Ce que le système fait sur la même question :               
+      116 +  - le modèle appelle `calculer("moyenne", "Global_Sales", "Ge
+          +nre", "Racing")` ;                                            
+      117 +  - l'outil renvoie `{"resultat": 0.593, "n": 1226}` ;        
+      118 +  - le modèle répond « La moyenne des ventes mondiales des jeu
+          +x du genre Racing est de 0,593 millions d'exemplaires pour 122
+          +6 jeux. » ;                                                   
+      119 +  - l'arbitre autorise la réponse (`"autorisee": true`, aucun 
+          +nombre non justifié), car 0,593 et 1226 viennent de l'outil.  
+      120 +                                                              
+      121 +**Limites de ce benchmark** :                                 
+      122 +1. Les questions ont été choisies dans le périmètre de l'outil
+          + (une statistique, au plus un filtre). Le benchmark mesure la 
+          +fiabilité sur ce type de questions, pas sur des questions hors
+          + périmètre (classement, comparaison de deux groupes, plusieurs
+          + filtres).                                                    
+      123 +2. Le modèle seul n'a pas accès au fichier. La comparaison mon
+          +tre donc l'apport de l'outil, pas une faiblesse de raisonnemen
+          +t du modèle : on ne peut pas calculer une médiane sur des donn
+          +ées qu'on n'a pas.                                            
+      124 +3. L'arbitre n'a eu à bloquer aucune réponse ici. Ce benchmark
+          + ne mesure donc pas son efficacité, qui est démontrée par le t
+          +est de triche de la brique 3 (`test_triche_bloquee`).         
+      125 +4. 30 sur 30 ne prouve pas que le système ne se trompe jamais.
+          + Ce sont 3 essais des mêmes 10 questions, pas 30 cas indépenda
+          +nts. À température 0.2, les essais se ressemblent beaucoup : l
+          +'écart-type nul reflète cette répétition plus qu'une garantie.
+      126 +5. La règle de correction est souple : une réponse est jugée j
+          +uste si au moins un de ses nombres correspond à la vérité. Une
+          + réponse qui cite plusieurs chiffres au hasard pourrait tomber
+          + juste par chance. Ici cela n'a avantagé aucun des deux modes 
+          +: le modèle seul n'a jamais touché la bonne valeur, et le syst
+          +ème ne cite que le résultat de l'outil et le nombre de jeux.  
+
+● J'ai rédigé la section Brique 9 dans EVIDENCE.md. Je n'ai lancé aucun
+  benchmark et rien commité.
+
+  1. Contenu de resultats/benchmark_resume.md
+
+  ┌─────┬──────────────────┬────────┬────────────┬───────────┬─────────────┐
+  │     │    Question      │        │  Modèle    │ Système : │ Système :   │
+  │  #  │    (abrégée)     │ Vérité │  seul :    │   justes  │  bloquées   │
+  │     │                  │        │   justes   │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 1   │ moyenne Global,  │ 0.5928 │ 0/3        │ 3/3       │ 0/3         │
+  │     │ Racing           │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 2   │ médiane NA, PS2  │ 0.09   │ 0/3        │ 3/3       │ 0/3         │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 3   │ somme EU,        │ 418.3  │ 0/3        │ 3/3       │ 0/3         │
+  │     │ Nintendo         │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 4   │ nombre, 2008     │ 1428   │ 0/3        │ 3/3       │ 0/3         │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 5   │ écart-type JP,   │ 0.6512 │ 0/3        │ 3/3       │ 0/3         │
+  │     │ Role-Playing     │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 6   │ somme Global,    │ 600.45 │ 0/3        │ 3/3       │ 0/3         │
+  │     │ 2010             │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 7   │ moyenne Other,   │ 0.108  │ 0/3        │ 3/3       │ 0/3         │
+  │     │ PS3              │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 8   │ nombre,          │ 1339   │ 0/3        │ 3/3       │ 0/3         │
+  │     │ Electronic Arts  │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 9   │ médiane Global,  │ 0.17   │ 0/3        │ 3/3       │ 0/3         │
+  │     │ tous             │        │            │           │             │
+  ├─────┼──────────────────┼────────┼────────────┼───────────┼─────────────┤
+  │ 10  │ écart-type       │ 3.1775 │ 0/3        │ 3/3       │ 0/3         │
+  │     │ Global, Wii      │        │            │           │             │
+  └─────┴──────────────────┴────────┴────────────┴───────────┴─────────────┘
+
+  Bilan par mode :
+  - Modèle seul : 0 %, 0 % et 0 % de réponses justes aux trois essais, soit une
+    moyenne de 0 % (écart-type 0).
+  - Système : 100 %, 100 % et 100 %, soit une moyenne de 100 % (écart-type 0).
+
+  Dans le fichier, les questions sont écrites en entier.
+
+  2. Les erreurs du modèle seul (30 réponses)
+
+  ┌─────────────────────────────────────────────────────────────────┬────────┐
+  │                          Type d'erreur                          │ Nombre │
+  ├─────────────────────────────────────────────────────────────────┼────────┤
+  │ Chiffre inventé, présenté comme un calcul sur le fichier, avec  │ 27     │
+  │ une réponse finale                                              │        │
+  ├─────────────────────────────────────────────────────────────────┼────────┤
+  │ Réponse coupée à 512 jetons avant la conclusion, après des      │ 3      │
+  │ chiffres eux aussi inventés (Q1 essai 1, Q2 essais 2 et 3)      │        │
+  ├─────────────────────────────────────────────────────────────────┼────────┤
+  │ Refus ou « je n'ai pas accès aux données »                      │ 0      │
+  ├─────────────────────────────────────────────────────────────────┼────────┤
+  │ Hors sujet (ne répond pas à la question posée)                  │ 0      │
+  └─────────────────────────────────────────────────────────────────┴────────┘
+
+  Ce qui revient dans plusieurs réponses (ces cas se recoupent, je ne les compte
+  donc pas séparément) :
+  - Colonnes inventées : Europe_Millions, World_Sales, Vendor, Region,
+    YearReleased, et même genre == 'Wii'.
+  - Taille du fichier inventée : « 20 jeux Racing », « 12 RPG », « environ 1 600
+    titres ».
+  - Une médiane confondue avec un total : 67,5 millions pour la médiane PS2 (Q2,
+    essai 1).
+  - Une assurance constante, du type « calcul précis » ou « valeur standard ».
+
+  La réponse la plus proche de la vérité est 1 456 jeux sortis en 2008, au lieu
+  de 1 428 (Q4, essai 3). Elle reste fausse, puisqu'un nombre de jeux doit être
+  exact.
+
+  3. Un échec représentatif
+
+  J'ai choisi la question 1, essai 2 (moyenne des ventes mondiales des jeux
+  Racing). Elle montre bien le mécanisme : le calcul est juste, mais ses données
+  sont inventées. L'explication complète est dans la section ci-dessous.
+
+  4. La section rédigée dans EVIDENCE.md
+
+  ▎ Brique 9 — Comparaison mesurée
+  ▎
+  ▎ Ce que je montre : sur 10 questions à réponse connue, le modèle seul se 
+  ▎ trompe à chaque fois et mon système (outil + arbitre) répond juste à chaque 
+  ▎ fois.
+  ▎ - Chaque question porte sur une seule statistique (moyenne, médiane, somme, 
+  ▎ nombre, écart-type) avec au plus un filtre (Genre, Platform, Publisher, 
+  ▎ Year). Les cinq colonnes de ventes sont utilisées.
+  ▎ - La vérité est calculée indépendamment dans benchmark.py : le CSV propre 
+  ▎ est relu avec csv et le module statistics, sans outil.py ni stats.py.
+  ▎ - Les deux modes ont fait 3 essais chacun, avec le même modèle Qwen3.5-4B 
+  ▎ local (Ollama, température 0.2, 512 jetons de réponse au plus).
+  ▎ - Une réponse est juste si elle contient un nombre à moins de 1 % de la 
+  ▎ vérité. Pour un nombre de jeux, il faut la valeur exacte.
+  ▎
+  ▎ | Mode                      | Essai 1 | Essai 2 | Essai 3 | Moyenne ± 
+  ▎ écart-type | Réponses bloquées |
+  ▎ |---------------------------|---------|---------|---------|-----------------
+  ▎ -----|-------------------|
+  ▎ | Modèle seul               | 0 %     | 0 %     | 0 %     | 0 % ± 0         
+  ▎     | — (pas d'arbitre) |
+  ▎ | Système (outil + arbitre) | 100 %   | 100 %   | 100 %   | 100 % ± 0       
+  ▎     | 0 sur 30          |
+  ▎
+  ▎ Les 30 réponses du modèle seul se répartissent ainsi :
+  ▎ - 27 donnent un chiffre inventé, présenté comme le résultat d'un calcul sur 
+  ▎ le fichier.
+  ▎ - 3 sont coupées par la limite de 512 jetons avant leur conclusion, après 
+  ▎ avoir cité des chiffres eux aussi inventés.
+  ▎ - Aucune ne dit ne pas avoir accès aux données.
+  ▎
+  ▎ Fichiers : benchmark.py, tests/test_benchmark.py, resultats/benchmark.json 
+  ▎ (les 60 réponses avec leur trace complète), resultats/benchmark_resume.md.
+  ▎
+  ▎ Commandes pour reproduire :
+  ▎ .venv\Scripts\python -m pytest -q
+  ▎ .venv\Scripts\python benchmark.py --rapide
+  ▎ .venv\Scripts\python benchmark.py
+  ▎ Le benchmark complet a duré près de 2 heures sur mon PC, car les réponses 
+  ▎ ralentissent au fil des essais. --rapide (2 questions, 1 essai) sert à 
+  ▎ vérifier que tout marche avant de lancer le benchmark complet.
+  ▎
+  ▎ Résultat attendu :
+  ▎ - Tests : 53 passés, dont 18 pour le benchmark.
+  ▎ - Benchmark : le système obtient 30 réponses justes sur 30 et aucune bloquée
+  ▎ ; le modèle seul obtient 0 sur 30.
+  ▎ - Le texte des réponses peut varier d'une exécution à l'autre.
+  ▎
+  ▎ Un échec expliqué (question 1, essai 2, dans resultats/benchmark.json) :
+  ▎ - Question : moyenne des ventes mondiales, en millions d'exemplaires, des 
+  ▎ jeux du genre Racing. Vérité : 0,5928 million, sur 1226 jeux.
+  ▎ - Ce que le modèle seul répond : « Le nombre total de jeux classés dans ce 
+  ▎ genre dans le jeu de données complet est de 20. » puis « La moyenne des 
+  ▎ ventes mondiales pour les jeux du genre Racing est d'environ 6,925 millions 
+  ▎ d'exemplaires. »
+  ▎ - Pourquoi c'est faux : la division 138,5 / 20 = 6,925 est juste, mais ses 
+  ▎ deux entrées sont inventées. Il n'y a pas 20 jeux Racing mais 1226, et la 
+  ▎ colonne World_Sales qu'il cite n'existe pas. Le modèle n'a jamais vu le 
+  ▎ fichier : il imagine quelques grands titres (Gran Turismo, Forza…), si bien 
+  ▎ que sa moyenne est 12 fois trop grande. Le ton reste assuré (« jeu de 
+  ▎ données complet »), rien ne signale au lecteur que les chiffres sont 
+  ▎ inventés.
+  ▎ - Ce que le système fait sur la même question :
+  ▎   - le modèle appelle calculer("moyenne", "Global_Sales", "Genre", "Racing")
+  ▎ ;
+  ▎   - l'outil renvoie {"resultat": 0.593, "n": 1226} ;
+  ▎   - le modèle répond « La moyenne des ventes mondiales des jeux du genre 
+  ▎ Racing est de 0,593 millions d'exemplaires pour 1226 jeux. » ;
+  ▎   - l'arbitre autorise la réponse ("autorisee": true, aucun nombre non 
+  ▎ justifié), car 0,593 et 1226 viennent de l'outil.
+  ▎
+  ▎ Limites de ce benchmark :
+  ▎ 1. Les questions ont été choisies dans le périmètre de l'outil (une 
+  ▎ statistique, au plus un filtre). Le benchmark mesure la fiabilité sur ce 
+  ▎ type de questions, pas sur des questions hors périmètre (classement, 
+  ▎ comparaison de deux groupes, plusieurs filtres).
+  ▎ 2. Le modèle seul n'a pas accès au fichier. La comparaison montre donc 
+  ▎ l'apport de l'outil, pas une faiblesse de raisonnement du modèle : on ne 
+  ▎ peut pas calculer une médiane sur des données qu'on n'a pas.
+  ▎ 3. L'arbitre n'a eu à bloquer aucune réponse ici. Ce benchmark ne mesure 
+  ▎ donc pas son efficacité, qui est démontrée par le test de triche de la 
+  ▎ brique 3 (test_triche_bloquee).
+  ▎ 4. 30 sur 30 ne prouve pas que le système ne se trompe jamais. Ce sont 3 
+  ▎ essais des mêmes 10 questions, pas 30 cas indépendants. À température 0.2, 
+  ▎ les essais se ressemblent beaucoup : l'écart-type nul reflète cette 
+  ▎ répétition plus qu'une garantie.
+  ▎ 5. La règle de correction est souple : une réponse est jugée juste si au 
+  ▎ moins un de ses nombres correspond à la vérité. Une réponse qui cite 
+  ▎ plusieurs chiffres au hasard pourrait tomber juste par chance. Ici cela n'a 
+  ▎ avantagé aucun des deux modes : le modèle seul n'a jamais touché la bonne 
+  ▎ valeur, et le système ne cite que le résultat de l'outil et le nombre de 
+  ▎ jeux.
+
+  À vérifier avant de commiter
+
+  - Durée : les durées enregistrées dans le JSON totalisent environ 97 minutes
+    de réponses. Le temps réellement écoulé était donc un peu plus long, ce qui
+    reste cohérent avec ton « près de 2 heures ». Le ralentissement est net : le
+    modèle seul passe de 13 minutes à l'essai 1 à 23 minutes à l'essai 3, et le
+    système de 11 à 16 minutes.
+  - Réponse Q6, essai 2 : elle a utilisé exactement 512 jetons mais se termine
+    par une phrase de conclusion complète. Je l'ai donc classée parmi les
+    chiffres inventés, et non parmi les réponses coupées.
+
+✻ Cogitated for 1m 34s · done 20:00
+
+※ recap: Tu termines la brique 9, qui compare le modèle seul et ton système, et j'ai rédigé la section correspondante dans EVIDENCE.md, sans encore la commiter. Il te reste à relire cette section et à me dire si je peux la commiter avec le dossier resultats/. (disable recaps in /config)
+
+> La section Brique 9 me convient. Ajoute une 6e limite : « 6. La limite de 512 
+  jetons a coupé 3 réponses du modèle seul sur 30 avant leur conclusion (Q1     
+  essai 1, Q2 essais 2 et 3), après des chiffres déjà inventés. Même si ces 3   
+  réponses avaient abouti au bon chiffre, le modèle seul serait au plus à 10 %, 
+  contre 100 % pour le système : la conclusion ne change pas. »                 
+                                                                                
+  Puis rédige le README.md final, qui doit permettre de tout relancer sur un    
+  clone neuf (exigence R1). Il commence par le titre « Analyste vgsales avec    
+  arbitre » et contient :                                                       
+  1. En deux phrases : ce que fait le projet (un petit modèle local répond à    
+  des questions sur les ventes de jeux vidéo en appelant mon outil de calcul ;  
+  un arbitre écrit en Python bloque toute réponse contenant un nombre non       
+  calculé).                                                                     
+  2. Auteur : Ghali Al Mouzani (GhaliAl05 sur GitHub). Cours Coding for AI &    
+  Data Science, aivancity, PGE3, 2026-2027.                                     
+  3. Résultat principal : sur 10 questions à réponse connue, 3 essais, le       
+  système répond juste 30 fois sur 30, le modèle seul 0 fois sur 30 (détails    
+  dans EVIDENCE.md).                                                            
+  4. Le modèle : Qwen3.5-4B quantifié Q4_K_M, en local via Ollama, num_ctx =    
+  8192, réflexion désactivée, num_predict = 512. Matériel de test : PC Windows, 
+  8 Go de RAM, sans carte graphique dédiée. Durées mesurées : environ 1 à 2     
+  minutes par réponse ; le benchmark complet a pris près de 2 heures.           
+  5. Installation et lancement, commandes PowerShell numérotées : installer     
+  Ollama, ollama pull qwen3.5:4b-q4_K_M, python -m venv .venv,                  
+  .venv\Scripts\python -m pip install -r requirements.txt, .venv\Scripts\python 
+  nettoyer.py, .venv\Scripts\python -m pytest -q, un exemple avec agent.py      
+  (avec et sans --sans-outil), benchmark.py --rapide puis benchmark.py.         
+  6. Structure du dépôt : un tableau fichier / rôle (nettoyer.py, stats.py,     
+  outil.py, arbitre.py, agent.py, benchmark.py, tests/, donnees/, traces/,      
+  resultats/, ai_log/, EVIDENCE.md, CLAUDE.md, requirements.txt).               
+  7. Les 5 briques cochées (1, 3, 6, 8, 9), une ligne chacune, avec un renvoi   
+  vers EVIDENCE.md.                                                             
+  8. Données : vgsales.csv, Gregory Smith, collectées sur vgchartz.com,         
+  publiées sur Zenodo (https://zenodo.org/records/5898311), licence CC BY 4.0 ; 
+  ventes en millions d'exemplaires.                                             
+  9. Aucune clé d'API ni donnée personnelle dans le dépôt ; tout tourne en      
+  local.                                                                        
+                                                                                
+  Crée ensuite ai_log/seance_04.md :                                            
+                                                                                
+  Séance 4 — 3 novembre 2026 (soir)                                             
+                                                                                
+  Outils : Claude Code ; Claude (claude.ai) pour relire les plans.              
+                                                                                
+  - Brique 9 : 10 questions proposées par Claude Code, vérifiées et validées    
+  par moi ; vérité calculée indépendamment avec le module statistics.           
+  - Sur le conseil de Claude (claude.ai) : limite num_predict = 512 pour éviter 
+  des réponses interminables du modèle seul. Claude Code a ajouté « Dans le     
+  jeu de données vgsales » au début des questions pour que la comparaison soit  
+  équitable ; j'ai validé.                                                      
+  - J'ai lancé moi-même le benchmark complet dans un terminal séparé (près de 2 
+  heures) : système 30/30, modèle seul 0/30.                                    
+  - Analyse : le modèle seul invente des chiffres dans 27 réponses sur 30 (3    
+  coupées à 512 jetons) et ne dit jamais qu'il n'a pas accès aux données.       
+  - Limites rédigées dans EVIDENCE, dont la réponse à l'objection des réponses  
+  coupées.                                                                      
+                                                                                
+  Enfin, lance .venv\Scripts\python -m pytest -q pour vérifier que tout passe,  
+  puis fais un commit avec benchmark.py, agent.py, tests/test_benchmark.py, le  
+  dossier resultats/, EVIDENCE.md, README.md et ai_log/seance_04.md, message «  
+  Brique 9 : benchmark, EVIDENCE et README final ». Montre-moi le README et le  
+  résultat de git status.                                                       
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(EVIDENCE.md)
+  ⎿  Added 1 line
+      124  3. L'arbitre n'a eu à bloquer aucune réponse ici. Ce benchmark
+            ne mesure donc pas son efficacité, qui est démontrée par le t
+           est de triche de la brique 3 (`test_triche_bloquee`).
+      125  4. 30 sur 30 ne prouve pas que le système ne se trompe jamais.
+            Ce sont 3 essais des mêmes 10 questions, pas 30 cas indépenda
+           nts. À température 0.2, les essais se ressemblent beaucoup : l
+           'écart-type nul reflète cette répétition plus qu'une garantie.
+      126  5. La règle de correction est souple : une réponse est jugée j
+           uste si au moins un de ses nombres correspond à la vérité. Une
+            réponse qui cite plusieurs chiffres au hasard pourrait tomber
+            juste par chance. Ici cela n'a avantagé aucun des deux modes 
+           : le modèle seul n'a jamais touché la bonne valeur, et le syst
+           ème ne cite que le résultat de l'outil et le nombre de jeux.
+      127 +6. La limite de 512 jetons a coupé 3 réponses du modèle seul s
+          +ur 30 avant leur conclusion (Q1 essai 1, Q2 essais 2 et 3), ap
+          +rès des chiffres déjà inventés. Même si ces 3 réponses avaient
+          + abouti au bon chiffre, le modèle seul serait au plus à 10 %, 
+          +contre 100 % pour le système : la conclusion ne change pas.   
+
+● Write(README.md)
+  ⎿  Added 97 lines
+       1  # Analyste vgsales avec arbitre
+       2 +                                                               
+       3 +Un petit modèle de langage local répond à des questions sur les
+         + ventes de jeux vidéo en appelant mon outil de calcul en Python
+         +.                                                              
+       4 +Un arbitre, lui aussi écrit en Python, bloque toute réponse qui
+         + contient un nombre que l'outil n'a pas calculé.               
+       5 +                                                               
+       6 +**Auteur** : Ghali Al Mouzani (GhaliAl05 sur GitHub). Cours Cod
+         +ing for AI & Data Science, aivancity, PGE3, 2026-2027.         
+       7 +                                                               
+       8 +## Résultat principal                                          
+       9 +                                                               
+      10 +Le benchmark compte 10 questions à réponse connue, posées 3 foi
+         +s chacune :                                                    
+      11 +- le système (modèle + outil + arbitre) répond juste **30 fois 
+         +sur 30** ;                                                     
+      12 +- le modèle seul répond juste **0 fois sur 30**.               
+      13 +                                                               
+      14 +Le détail, un échec expliqué et les limites sont dans [EVIDENCE
+         +.md](EVIDENCE.md), section Brique 9.                           
+      15 +                                                               
+      16 +## Le modèle                                                   
+      17 +                                                               
+      18 +- **Modèle** : Qwen3.5-4B quantifié Q4_K_M (`qwen3.5:4b-q4_K_M`
+         +), en local via Ollama (`http://127.0.0.1:11434`).             
+      19 +- **Réglages** : `num_ctx = 8192`, réflexion désactivée, `num_p
+         +redict = 512`.                                                 
+      20 +- **Matériel de test** : PC Windows, 8 Go de RAM, sans carte gr
+         +aphique dédiée.                                                
+      21 +- **Durées mesurées** : environ 1 à 2 minutes par réponse. Le b
+         +enchmark complet a pris près de 2 heures.                      
+      22 +                                                               
+      23 +## Installation et lancement                                   
+      24 +                                                               
+      25 +Ces commandes sont à taper dans PowerShell, à la racine du dépô
+         +t cloné.                                                       
+      26 +                                                               
+      27 +1. Installer Ollama depuis https://ollama.com, puis vérifier qu
+         +'il tourne (`ollama serve` s'il n'est pas lancé).              
+      28 +2. Télécharger le modèle :                                     
+      29 +   ```                                                         
+      30 +   ollama pull qwen3.5:4b-q4_K_M                               
+      31 +   ```                                                         
+      32 +3. Créer l'environnement Python :                              
+      33 +   ```                                                         
+      34 +   python -m venv .venv                                        
+      35 +   ```                                                         
+      36 +4. Installer la seule dépendance, pytest :                     
+      37 +   ```                                                         
+      38 +   .venv\Scripts\python -m pip install -r requirements.txt     
+      39 +   ```                                                         
+      40 +5. Nettoyer les données. Le script lit `donnees/vgsales_brut.cs
+         +v` et réécrit `donnees/vgsales_propre.csv` et `donnees/journal_
+         +nettoyage.md` :                                                
+      41 +   ```                                                         
+      42 +   .venv\Scripts\python nettoyer.py                            
+      43 +   ```                                                         
+      44 +6. Lancer les tests (Ollama n'est pas nécessaire) :            
+      45 +   ```                                                         
+      46 +   .venv\Scripts\python -m pytest -q                           
+      47 +   ```                                                         
+      48 +7. Poser une question, avec le système (outil + arbitre) puis a
+         +u modèle seul :                                                
+      49 +   ```                                                         
+      50 +   .venv\Scripts\python agent.py "Quelle est la moyenne des ven
+         +tes mondiales des jeux de genre Sports ?"                      
+      51 +   .venv\Scripts\python agent.py "Quelle est la moyenne des ven
+         +tes mondiales des jeux de genre Sports ?" --sans-outil         
+      52 +   ```                                                         
+      53 +   Chaque appel enregistre sa trace dans `traces/`.            
+      54 +8. Vérifier le benchmark en version courte (2 questions, 1 essa
+         +i), puis lancer le benchmark complet (10 questions, 3 essais, p
+         +rès de 2 heures) :                                             
+      55 +   ```                                                         
+      56 +   .venv\Scripts\python benchmark.py --rapide                  
+      57 +   .venv\Scripts\python benchmark.py                           
+      58 +   ```                                                         
+      59 +   Les résultats sont écrits dans `resultats/benchmark.json`, m
+         +is à jour après chaque réponse, et `resultats/benchmark_resume.
+         +md`. L'option `--essais N` change le nombre d'essais.          
+      60 +                                                               
+      61 +## Structure du dépôt                                          
+      62 +                                                               
+      63 +| Fichier | Rôle |                                             
+      64 +|---|---|                                                      
+      65 +| `nettoyer.py` | Nettoie les données brutes selon 6 règles écr
+         +ites et produit un journal |                                   
+      66 +| `stats.py` | Fonctions de statistiques simples : moyenne, méd
+         +iane, écart-type, intervalle de confiance à 95 % |             
+      67 +| `outil.py` | L'outil `calculer` appelé par le modèle : une st
+         +atistique sur une colonne de ventes, avec un filtre facultatif 
+         +|                                                              
+      68 +| `arbitre.py` | L'arbitre : bloque toute réponse contenant un 
+         +nombre non calculé par l'outil (tolérance 1 %) |               
+      69 +| `agent.py` | Dialogue avec Ollama, exécute les appels d'outil
+         +, passe la réponse à l'arbitre, enregistre la trace |          
+      70 +| `benchmark.py` | Compare le modèle seul et le système sur 10 
+         +questions à réponse connue |                                   
+      71 +| `tests/` | Tests pytest (nettoyage, outil, arbitre, benchmark
+         +), sans appel au modèle |                                      
+      72 +| `donnees/` | Données brutes, données propres et journal de ne
+         +ttoyage |                                                      
+      73 +| `traces/` | Traces JSON de vrais échanges avec le modèle |   
+      74 +| `resultats/` | Résultats du benchmark (JSON complet et résumé
+         + Markdown) |                                                   
+      75 +| `ai_log/` | Journal de chaque séance et export des conversati
+         +ons avec Claude Code |                                         
+      76 +| `EVIDENCE.md` | Les preuves de chaque brique : fichiers, comm
+         +andes, résultats attendus, limites |                           
+      77 +| `CLAUDE.md` | Les règles du projet données à Claude Code |   
+      78 +| `requirements.txt` | La seule dépendance externe : pytest |  
+      79 +                                                               
+      80 +## Briques réalisées                                           
+      81 +                                                               
+      82 +- [x] **Brique 1 — Outil** : le modèle appelle ma fonction `cal
+         +culer()` au lieu de répondre de mémoire.                       
+      83 +- [x] **Brique 3 — Règle imposée par le code** : l'arbitre bloq
+         +ue tout nombre non calculé, et un test de triche le prouve.    
+      84 +- [x] **Brique 6 — Données sales** : de vraies données ouvertes
+         + nettoyées par 6 règles écrites, avec un journal.              
+      85 +- [x] **Brique 8 — Incertitude** : un intervalle de confiance à
+         + 95 % de la moyenne, ajouté à l'outil.                         
+      86 +- [x] **Brique 9 — Comparaison mesurée** : benchmark du modèle 
+         +seul contre le système, avec une vérité calculée indépendamment
+         +.                                                              
+      87 +                                                               
+      88 +Le détail de chaque brique est dans [EVIDENCE.md](EVIDENCE.md).
+      89 +                                                               
+      90 +## Données                                                     
+      91 +                                                               
+      92 +- **Fichier** : `vgsales.csv`, de Gregory Smith, collecté sur v
+         +gchartz.com.                                                   
+      93 +- **Source** : publié sur Zenodo (https://zenodo.org/records/58
+         +98311), sous licence CC BY 4.0.                                
+      94 +- **Unité** : les ventes sont en millions d'exemplaires.       
+      95 +                                                               
+      96 +## Sécurité                                                    
+      97 +                                                               
+      98 +Le dépôt ne contient aucune clé d'API ni donnée personnelle. To
+         +ut tourne en local : le modèle comme les calculs.              
+
+● Write(ai_log\seance_04.md)
+  ⎿  Wrote 9 lines to ai_log\seance_04.md
+      1 # Séance 4 — 3 novembre 2026 (soir)
+      2 
+      3 Outils : Claude Code ; Claude (claude.ai) pour relire les plans.
+      4 
+      5 - Brique 9 : 10 questions proposées par Claude Code, vérifiées et
+         validées par moi ; vérité calculée indépendamment avec le module
+         statistics.
+      6 - Sur le conseil de Claude (claude.ai) : limite num_predict = 512
+         pour éviter des réponses interminables du modèle seul. Claude Co
+        de a ajouté « Dans le jeu de données vgsales » au début des quest
+     … +4 lines (ctrl+o to expand)
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● Les chemins de nettoyer.py correspondent au README. Je lance les tests, puis
+  je fais le commit.
+  Committed d730431, ran 1 shell command (ctrl+o to expand)
+  ⎿  PostToolUse:PowerShell says: Tip: Run /ultrareview before you push to catch
+     bugs with a cloud-based multi-agent review — 3 free reviews left.
+
+● C'est commité. J'ai ajouté la 6e limite dans EVIDENCE.md, écrit le README
+  final et créé ai_log/seance_04.md. Les 53 tests passent (pytest -q).
+
+  Le commit d730431 « Brique 9 : benchmark, EVIDENCE et README final » contient
+  8 fichiers : benchmark.py, agent.py, tests/test_benchmark.py,
+  resultats/benchmark.json, resultats/benchmark_resume.md, EVIDENCE.md,
+  README.md et ai_log/seance_04.md.
+
+  git status
+
+  On branch master
+  nothing to commit, working tree clean
+  Je n'ai rien poussé vers GitHub.
+
+  Le README
+
+  # Analyste vgsales avec arbitre
+
+  Un petit modèle de langage local répond à des questions sur les ventes de jeux
+  vidéo en appelant mon outil de calcul en Python.
+  Un arbitre, lui aussi écrit en Python, bloque toute réponse qui contient un
+  nombre que l'outil n'a pas calculé.
+
+  **Auteur** : Ghali Al Mouzani (GhaliAl05 sur GitHub). Cours Coding for AI &
+  Data Science, aivancity, PGE3, 2026-2027.
+
+  ## Résultat principal
+
+  Le benchmark compte 10 questions à réponse connue, posées 3 fois chacune :
+  - le système (modèle + outil + arbitre) répond juste **30 fois sur 30** ;
+  - le modèle seul répond juste **0 fois sur 30**.
+
+  Le détail, un échec expliqué et les limites sont dans
+  [EVIDENCE.md](EVIDENCE.md), section Brique 9.
+
+  ## Le modèle
+
+  - **Modèle** : Qwen3.5-4B quantifié Q4_K_M (`qwen3.5:4b-q4_K_M`), en local via
+  Ollama (`http://127.0.0.1:11434`).
+  - **Réglages** : `num_ctx = 8192`, réflexion désactivée, `num_predict = 512`.
+  - **Matériel de test** : PC Windows, 8 Go de RAM, sans carte graphique dédiée.
+  - **Durées mesurées** : environ 1 à 2 minutes par réponse. Le benchmark
+  complet a pris près de 2 heures.
+
+  ## Installation et lancement
+
+  Ces commandes sont à taper dans PowerShell, à la racine du dépôt cloné.
+
+  1. Installer Ollama depuis https://ollama.com, puis vérifier qu'il tourne
+  (`ollama serve` s'il n'est pas lancé).
+  2. Télécharger le modèle :
+     ollama pull qwen3.5:4b-q4_K_M
+  3. Créer l'environnement Python :
+     python -m venv .venv
+  4. Installer la seule dépendance, pytest :
+     .venv\Scripts\python -m pip install -r requirements.txt
+  5. Nettoyer les données. Le script lit `donnees/vgsales_brut.csv` et réécrit
+  `donnees/vgsales_propre.csv` et `donnees/journal_nettoyage.md` :
+     .venv\Scripts\python nettoyer.py
+  6. Lancer les tests (Ollama n'est pas nécessaire) :
+     .venv\Scripts\python -m pytest -q
+  7. Poser une question, avec le système (outil + arbitre) puis au modèle seul :
+     .venv\Scripts\python agent.py "Quelle est la moyenne des ventes mondiales
+  des jeux de genre Sports ?"
+     .venv\Scripts\python agent.py "Quelle est la moyenne des ventes mondiales
+  des jeux de genre Sports ?" --sans-outil
+     Chaque appel enregistre sa trace dans `traces/`.
+  8. Vérifier le benchmark en version courte (2 questions, 1 essai), puis lancer
+  le benchmark complet (10 questions, 3 essais, près de 2 heures) :
+     .venv\Scripts\python benchmark.py --rapide
+     .venv\Scripts\python benchmark.py
+     Les résultats sont écrits dans `resultats/benchmark.json`, mis à jour après
+  chaque réponse, et `resultats/benchmark_resume.md`. L'option `--essais N`
+  change le nombre d'essais.
+
+  ## Structure du dépôt
+
+  | Fichier | Rôle |
+  |---|---|
+  | `nettoyer.py` | Nettoie les données brutes selon 6 règles écrites et produit
+  un journal |
+  | `stats.py` | Fonctions de statistiques simples : moyenne, médiane,
+  écart-type, intervalle de confiance à 95 % |
+  | `outil.py` | L'outil `calculer` appelé par le modèle : une statistique sur
+  une colonne de ventes, avec un filtre facultatif |
+  | `arbitre.py` | L'arbitre : bloque toute réponse contenant un nombre non
+  calculé par l'outil (tolérance 1 %) |
+  | `agent.py` | Dialogue avec Ollama, exécute les appels d'outil, passe la
+  réponse à l'arbitre, enregistre la trace |
+  | `benchmark.py` | Compare le modèle seul et le système sur 10 questions à
+  réponse connue |
+  | `tests/` | Tests pytest (nettoyage, outil, arbitre, benchmark), sans appel
+  au modèle |
+  | `donnees/` | Données brutes, données propres et journal de nettoyage |
+  | `traces/` | Traces JSON de vrais échanges avec le modèle |
+  | `resultats/` | Résultats du benchmark (JSON complet et résumé Markdown) |
+  | `ai_log/` | Journal de chaque séance et export des conversations avec Claude
+  Code |
+  | `EVIDENCE.md` | Les preuves de chaque brique : fichiers, commandes,
+  résultats attendus, limites |
+  | `CLAUDE.md` | Les règles du projet données à Claude Code |
+  | `requirements.txt` | La seule dépendance externe : pytest |
+
+  ## Briques réalisées
+
+  - [x] **Brique 1 — Outil** : le modèle appelle ma fonction `calculer()` au
+  lieu de répondre de mémoire.
+  - [x] **Brique 3 — Règle imposée par le code** : l'arbitre bloque tout nombre
+  non calculé, et un test de triche le prouve.
+  - [x] **Brique 6 — Données sales** : de vraies données ouvertes nettoyées par
+  6 règles écrites, avec un journal.
+  - [x] **Brique 8 — Incertitude** : un intervalle de confiance à 95 % de la
+  moyenne, ajouté à l'outil.
+  - [x] **Brique 9 — Comparaison mesurée** : benchmark du modèle seul contre le
+  système, avec une vérité calculée indépendamment.
+
+  Le détail de chaque brique est dans [EVIDENCE.md](EVIDENCE.md).
+
+  ## Données
+
+  - **Fichier** : `vgsales.csv`, de Gregory Smith, collecté sur vgchartz.com.
+  - **Source** : publié sur Zenodo (https://zenodo.org/records/5898311), sous
+  licence CC BY 4.0.
+  - **Unité** : les ventes sont en millions d'exemplaires.
+
+  ## Sécurité
+
+  Le dépôt ne contient aucune clé d'API ni donnée personnelle. Tout tourne en
+  local : le modèle comme les calculs.
+
+  Dans le vrai fichier, chaque commande est dans un bloc de code ; je les ai
+  aplaties ici pour l'affichage.
+
+  L'export de la conversation de cette séance (ai_log/seance_04_claude_code.txt)
+  n'existe pas encore. Tu le faisais dans un commit séparé aux séances
+  précédentes.
+
+✻ Baked for 44s · done 20:07
