@@ -1,0 +1,14 @@
+{
+  "question": "Quelle est la moyenne des ventes mondiales des jeux de genre Sports ?",
+  "avec_outil": false,
+  "etapes": [
+    {
+      "type": "modele",
+      "prompt_eval_count": 27,
+      "eval_count": 428
+    }
+  ],
+  "reponse_finale": "Il n'existe pas un chiffre unique et fixe pour la \"moyenne des ventes mondiales\" des jeux de genre **Sports**, car ce genre ne représente qu'une partie du marché vidéo-gaming global. Les chiffres varient considérablement selon l'année, les régions (le marché asiatique étant souvent plus volumineux), et si l'on inclut ou non les jeux mobiles (qui dominent le marché mais sont moins orientés \"sports\" pur).\n\nCependant, on peut se baser sur les données de rapports majeurs comme ceux d'**Newzoo** (maintenant partiellement intégré à Data Delve) ou d'**Statista** pour estimer la situation :\n\n1.  **Part du marché** : Le genre Sports représente généralement entre **5 % et 8 %** des ventes totales de jeux vidéo mondiaux.\n2.  **Chiffres bruts estimés** : Avec un marché global qui dépasse régulièrement les **200 milliards de dollars** (environ 190-210 milliards USD en 2023-2024 selon les sources), cela signifie que le secteur des jeux Sports génère annuellement entre **10 et 16 milliards de dollars**.\n3.  **Les titulaires** : Ce chiffre est très influencé par quelques \"titans\" comme *FIFA* (maintenant *EA Sports FC*), *NBA 2K*, *Madden NFL*, ou *eFootball*. Si l'on retire ces titres phares, la moyenne des ventes des autres jeux de ce genre chute drastiquement.\n\n**Conclusion :**\n\nLa vente mondiale annuelle du genre **Sports** se situe approximativement entre **10 et 15 milliards de dollars par an**.\n\nIl est important de noter que cette moyenne est tirée vers le haut par les succès commerciaux exceptionnels d'un petit nombre de jeux (souvent des titres exclusifs ou très populaires), tandis que la majorité des autres jeux de ce genre génèrent des revenus beaucoup plus modestes.",
+  "tours": 1,
+  "duree_secondes": 96.81
+}

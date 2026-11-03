@@ -1,0 +1,35 @@
+{
+  "question": "Quelle est la moyenne des ventes mondiales des jeux de genre Sports ?",
+  "avec_outil": true,
+  "etapes": [
+    {
+      "type": "modele",
+      "prompt_eval_count": 596,
+      "eval_count": 75
+    },
+    {
+      "type": "outil",
+      "arguments": {
+        "statistique": "moyenne",
+        "colonne": "Global_Sales",
+        "filtre_colonne": "Genre",
+        "filtre_valeur": "Sports"
+      },
+      "resultat": {
+        "statistique": "moyenne",
+        "colonne": "Global_Sales",
+        "filtre": "Genre = Sports",
+        "resultat": 0.568,
+        "n": 2304
+      }
+    },
+    {
+      "type": "modele",
+      "prompt_eval_count": 731,
+      "eval_count": 37
+    }
+  ],
+  "reponse_finale": "La moyenne des ventes mondiales des jeux de genre Sports est de 0,568 million d'exemplaires sur les 2304 jeux analysés.",
+  "tours": 2,
+  "duree_secondes": 71.92
+}
