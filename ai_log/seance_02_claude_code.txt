@@ -1,0 +1,1726 @@
+ ▐▛███▛█   Claude Code v2.1.317
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~\Desktop\analyste-vgsales
+
+‼ Your login expires in 2 days · run /login to renew
+
+> Nouvelle étape : brique 1 (mon propre outil). Pour l'instant, on écrit        
+  l'outil et ses tests, SANS appeler le modèle.                                 
+                                                                                
+  1. stats.py : reprends les fonctions du corrigé de la séance 2 de mon cours,  
+  à l'identique :                                                               
+                                                                                
+  def moyenne(xs):                                                              
+      return sum(xs) / len(xs)                                                  
+                                                                                
+  def mediane(xs):                                                              
+      t = sorted(xs)                                                            
+      n = len(t)                                                                
+      if n % 2 == 1:                                                            
+          return t[n // 2]                                                      
+      return (t[n // 2 - 1] + t[n // 2]) / 2                                    
+                                                                                
+  def ecart_type(xs):                                                           
+      m = moyenne(xs)                                                           
+      return (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0.5             
+                                                                                
+  Chacune avec une docstring en français (ecart_type : version « échantillon », 
+  division par n - 1).                                                          
+                                                                                
+  2. outil.py :                                                                 
+  - une fonction charger() qui lit donnees/vgsales_propre.csv (chemin construit 
+  avec __file__, comme dans nettoyer.py) et convertit les 5 colonnes de ventes  
+  en float ;                                                                    
+  - une fonction calculer(statistique, colonne, filtre_colonne=None,            
+  filtre_valeur=None) :                                                         
+    - statistique parmi : "nombre", "somme", "moyenne", "mediane", "ecart_type" 
+  ;                                                                             
+    - colonne parmi : "Global_Sales", "NA_Sales", "EU_Sales", "JP_Sales",       
+  "Other_Sales" ;                                                               
+    - filtre facultatif : filtre_colonne parmi "Genre", "Platform",             
+  "Publisher", "Year", et on garde les jeux dont cette colonne est égale à      
+  filtre_valeur (comparaison de texte) ;                                        
+    - elle renvoie un dictionnaire : {"statistique", "colonne", "filtre" (texte 
+  lisible, ou "aucun"), "resultat" (arrondi à 3 décimales), "n" (nombre de      
+  jeux utilisés)} ;                                                             
+    - si la statistique, la colonne ou le filtre sont invalides, ou si aucun    
+  jeu ne correspond, elle ne plante pas : elle renvoie {"erreur": "<message     
+  clair en français qui dit quelles valeurs sont acceptées>"} ;                 
+    - ecart_type demande au moins 2 jeux : sinon, une erreur claire.            
+  - une constante DESCRIPTION_OUTIL : la description de l'outil au format «     
+  tools » d'Ollama (type function, name "calculer", description en français,    
+  paramètres avec leurs valeurs possibles). Elle servira à l'étape suivante.    
+                                                                                
+  3. tests/test_outil.py (pytest) :                                             
+  - les exemples du corrigé : moyenne([1, 2, 3, 4]) == 2.5 ; mediane([5, 1, 3]) 
+  == 3 ; mediane([4, 1, 3, 2]) == 2.5 ; mediane ne modifie pas la liste reçue   
+  ; ecart_type([2, 4, 4, 4, 5, 5, 7, 9]) vaut environ 2.138 ; ecart_type([5, 5, 
+  5]) == 0 ;                                                                    
+  - calculer sur les vraies données, comparé à un calcul fait indépendamment    
+  avec le module statistics (comme le comparer.py du cours) : la moyenne de     
+  Global_Sales pour Genre = Sports, et le nombre de jeux pour Platform = Wii ;  
+  - les cas d'erreur : statistique inconnue, colonne inconnue, filtre qui ne    
+  trouve aucun jeu → chaque fois un dictionnaire avec la clé "erreur".          
+                                                                                
+  Respecte CLAUDE.md. Explique-moi d'abord ton plan et attends mon accord.      
+
+  Listed 2 directories (ctrl+o to expand)
+
+● J'ai regardé le dépôt : stats.py et outil.py existent déjà, mais ne
+  contiennent qu'une ligne de commentaire d'en-tête. Je les complète en gardant
+  ce commentaire. tests/test_outil.py n'existe pas encore. Dans le CSV propre,
+  les 5 colonnes de ventes et Year sont lues comme du texte, sous la forme
+  "2006".
+
+  Plan
+
+  1. stats.py : les 3 fonctions du corrigé, recopiées sans rien changer, chacune
+  avec une docstring en français. Pour ecart_type, la docstring précisera que
+  c'est la version « échantillon » (division par n − 1). Elle contient sum(... 
+  for x in xs) : c'est une expression simple, pas une compréhension imbriquée,
+  donc je la laisse telle quelle.
+
+  2. outil.py
+  - Des constantes : CHEMIN_PROPRE, construit avec __file__ comme dans
+    nettoyer.py, et des listes STATISTIQUES, COLONNES_VENTES et COLONNES_FILTRE
+    qui donnent les valeurs acceptées. Les messages d'erreur réutilisent ces
+    listes, ce qui évite de les écrire deux fois.
+  - charger() : lit le CSV avec csv.DictReader et convertit les 5 colonnes de
+    ventes en float. Elle renvoie la liste des lignes.
+  - filtrer(lignes, filtre_colonne, filtre_valeur) : une petite fonction d'aide
+    qui garde les lignes où ligne[filtre_colonne] == filtre_valeur (comparaison
+    de texte).
+  - appliquer_statistique(statistique, valeurs) : une suite de if simples.
+    "nombre" donne len, "somme" donne sum, et les 3 autres appellent stats.py.
+  - calculer(...) vérifie les entrées dans cet ordre, et chaque problème renvoie
+    {"erreur": ...} avec les valeurs acceptées :
+    a. statistique inconnue ;
+    b. colonne inconnue ;
+    c. filtre invalide : colonne de filtre inconnue, ou une seule des deux
+       valeurs du filtre fournie ;
+    d. aucun jeu après le filtre ;
+    e. ecart_type avec moins de 2 jeux.
+
+    Si tout va bien, elle renvoie {"statistique", "colonne", "filtre", 
+    "resultat", "n"}. Le filtre est écrit comme "Genre = Sports", ou "aucun"
+    s'il n'y en a pas. Le résultat est arrondi avec round(..., 3).
+  - DESCRIPTION_OUTIL : un dictionnaire au format tools d'Ollama ({"type": 
+    "function", "function": {"name": "calculer", "description": ..., 
+    "parameters": {...}}}). Il contient des enum pour statistique, colonne et
+    filtre_colonne. Les deux premiers paramètres sont required et les deux
+    filtres sont facultatifs.
+
+  3. tests/test_outil.py : même méthode d'import que test_nettoyer.py
+  (sys.path.insert).
+  - Les 6 exemples du corrigé. Pour l'écart-type, j'utilise abs(... - 2.138) < 
+    0.001. Pour vérifier que mediane ne modifie pas la liste, je compare la
+    liste avant et après l'appel.
+  - La moyenne de Global_Sales pour Sports, et le nombre de jeux sur Wii. Je les
+    recalcule indépendamment en relisant le CSV avec csv et statistics.mean,
+    puis je compare à 3 décimales.
+  - 3 tests d'erreur (statistique inconnue, colonne inconnue, filtre sans aucun
+    jeu). Je vérifie que "erreur" est dans le dictionnaire renvoyé. J'ajoute un
+    4e test pour ecart_type sur un seul jeu, que tu as demandé comme erreur
+    claire mais pas dans les tests ; dis-moi si tu préfères que je l'enlève.
+
+  Une fois les fichiers écrits, je lance pytest. Je t'explique chaque fonction
+  au fur et à mesure, et je ne fais aucun commit sans que tu le demandes.
+
+  Est-ce que je peux y aller ?
+
+✻ Churned for 24s · done 13:44
+
+> D'accord, avec deux ajustements :                                             
+  1. Garde le 4e test (ecart_type sur un seul jeu).                             
+  2. Dans filtrer, compare str(ligne[filtre_colonne]).lower() avec              
+  str(filtre_valeur).lower(), parce que le modèle pourra envoyer l'année comme  
+  un nombre (2006 au lieu de "2006") ou écrire "sports" en minuscules. Ajoute   
+  deux tests : calculer("nombre", "Global_Sales", "Year", 2006) donne le même   
+  résultat qu'avec "2006", et "sports" donne le même résultat que "Sports".     
+     Tu peux y aller.                                                           
+
+● Write(stats.py)
+  ⎿  Added 20 lines
+       1  # Fonctions de statistiques simples (somme, moyenne, médiane, i
+          ntervalles) sur les données nettoyées.
+       2 +                                                               
+       3 +                                                               
+       4 +def moyenne(xs):                                               
+       5 +    """Renvoie la moyenne de la liste xs : la somme des valeurs
+         + divisée par leur nombre."""                                   
+       6 +    return sum(xs) / len(xs)                                   
+       7 +                                                               
+       8 +                                                               
+       9 +def mediane(xs):                                               
+      10 +    """Renvoie la médiane de xs (la valeur du milieu une fois t
+         +riée). Ne modifie pas la liste reçue."""                       
+      11 +    t = sorted(xs)                                             
+      12 +    n = len(t)                                                 
+      13 +    if n % 2 == 1:                                             
+      14 +        return t[n // 2]                                       
+      15 +    return (t[n // 2 - 1] + t[n // 2]) / 2                     
+      16 +                                                               
+      17 +                                                               
+      18 +def ecart_type(xs):                                            
+      19 +    """Renvoie l'écart-type « échantillon » de xs (division par
+         + n - 1). Demande au moins 2 valeurs."""                        
+      20 +    m = moyenne(xs)                                            
+      21 +    return (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0
+         +.5                                                             
+
+● Write(outil.py)
+  ⎿  Added 127 lines
+        1  # Outil de calcul appelé par le modèle : reçoit une requête et
+            renvoie un résultat chiffré.
+        2 +                                                              
+        3 +import csv                                                    
+        4 +import os                                                     
+        5 +                                                              
+        6 +import stats                                                  
+        7 +                                                              
+        8 +# Le chemin part du dossier de ce fichier, pour marcher quel q
+          +ue soit le dossier courant.                                   
+        9 +DOSSIER_DONNEES = os.path.join(os.path.dirname(os.path.abspath
+          +(__file__)), "donnees")                                       
+       10 +CHEMIN_PROPRE = os.path.join(DOSSIER_DONNEES, "vgsales_propre.
+          +csv")                                                         
+       11 +                                                              
+       12 +# Les valeurs acceptées par l'outil.                          
+       13 +STATISTIQUES = ["nombre", "somme", "moyenne", "mediane", "ecar
+          +t_type"]                                                      
+       14 +COLONNES_VENTES = ["Global_Sales", "NA_Sales", "EU_Sales", "JP
+          +_Sales", "Other_Sales"]                                       
+       15 +COLONNES_FILTRE = ["Genre", "Platform", "Publisher", "Year"]  
+       16 +                                                              
+       17 +                                                              
+       18 +def charger():                                                
+       19 +    """Lit le CSV propre et renvoie la liste des jeux, avec le
+          +s 5 colonnes de ventes converties en float."""                
+       20 +    with open(CHEMIN_PROPRE, newline="", encoding="utf-8") as 
+          +fichier:                                                      
+       21 +        lignes = list(csv.DictReader(fichier))                
+       22 +    for ligne in lignes:                                      
+       23 +        for colonne in COLONNES_VENTES:                       
+       24 +            ligne[colonne] = float(ligne[colonne])            
+       25 +    return lignes                                             
+       26 +                                                              
+       27 +                                                              
+       28 +def filtrer(lignes, filtre_colonne, filtre_valeur):           
+       29 +    """Garde les jeux dont la colonne filtre_colonne vaut filt
+          +re_valeur (texte, sans tenir compte des majuscules)."""       
+       30 +    valeur_cherchee = str(filtre_valeur).lower()              
+       31 +    gardees = []                                              
+       32 +    for ligne in lignes:                                      
+       33 +        if str(ligne[filtre_colonne]).lower() == valeur_cherch
+          +ee:                                                           
+       34 +            gardees.append(ligne)                             
+       35 +    return gardees                                            
+       36 +                                                              
+       37 +                                                              
+       38 +def appliquer_statistique(statistique, valeurs):              
+       39 +    """Calcule la statistique demandée (un nom de STATISTIQUES
+          +) sur la liste de nombres valeurs."""                         
+       40 +    if statistique == "nombre":                               
+       41 +        return len(valeurs)                                   
+       42 +    if statistique == "somme":                                
+       43 +        return sum(valeurs)                                   
+       44 +    if statistique == "moyenne":                              
+       45 +        return stats.moyenne(valeurs)                         
+       46 +    if statistique == "mediane":                              
+       47 +        return stats.mediane(valeurs)                         
+       48 +    return stats.ecart_type(valeurs)                          
+       49 +                                                              
+       50 +                                                              
+       51 +def calculer(statistique, colonne, filtre_colonne=None, filtre
+          +_valeur=None):                                                
+       52 +    """Calcule une statistique sur une colonne de ventes, avec
+          + un filtre facultatif.                                        
+       53 +                                                              
+       54 +    Renvoie un dictionnaire avec le résultat, ou {"erreur": me
+          +ssage} si la demande est invalide.                            
+       55 +    """                                                       
+       56 +    if statistique not in STATISTIQUES:                       
+       57 +        return {"erreur": "Statistique inconnue : " + str(stat
+          +istique)                                                      
+       58 +                + ". Valeurs acceptées : " + ", ".join(STATIST
+          +IQUES) + "."}                                                 
+       59 +    if colonne not in COLONNES_VENTES:                        
+       60 +        return {"erreur": "Colonne inconnue : " + str(colonne)
+       61 +                + ". Valeurs acceptées : " + ", ".join(COLONNE
+          +S_VENTES) + "."}                                              
+       62 +                                                              
+       63 +    lignes = charger()                                        
+       64 +    texte_filtre = "aucun"                                    
+       65 +    if filtre_colonne is not None or filtre_valeur is not None
+          +:                                                             
+       66 +        if filtre_colonne not in COLONNES_FILTRE:             
+       67 +            return {"erreur": "Colonne de filtre inconnue : " 
+          ++ str(filtre_colonne)                                         
+       68 +                    + ". Valeurs acceptées : " + ", ".join(COL
+          +ONNES_FILTRE) + "."}                                          
+       69 +        if filtre_valeur is None:                             
+       70 +            return {"erreur": "Il manque filtre_valeur : donne
+          + la valeur cherchée dans la colonne "                         
+       71 +                    + filtre_colonne + "."}                   
+       72 +        lignes = filtrer(lignes, filtre_colonne, filtre_valeur
+          +)                                                             
+       73 +        texte_filtre = filtre_colonne + " = " + str(filtre_val
+          +eur)                                                          
+       74 +                                                              
+       75 +    if len(lignes) == 0:                                      
+       76 +        return {"erreur": "Aucun jeu ne correspond au filtre "
+          + + texte_filtre                                               
+       77 +                + ". Vérifie l'orthographe de la valeur."}    
+       78 +    if statistique == "ecart_type" and len(lignes) < 2:       
+       79 +        return {"erreur": "L'écart-type demande au moins 2 jeu
+          +x, or un seul jeu correspond au filtre "                      
+       80 +                + texte_filtre + "."}                         
+       81 +                                                              
+       82 +    valeurs = []                                              
+       83 +    for ligne in lignes:                                      
+       84 +        valeurs.append(ligne[colonne])                        
+       85 +                                                              
+       86 +    return {                                                  
+       87 +        "statistique": statistique,                           
+       88 +        "colonne": colonne,                                   
+       89 +        "filtre": texte_filtre,                               
+       90 +        "resultat": round(appliquer_statistique(statistique, v
+          +aleurs), 3),                                                  
+       91 +        "n": len(valeurs),                                    
+       92 +    }                                                         
+       93 +                                                              
+       94 +                                                              
+       95 +# Description de l'outil au format « tools » d'Ollama (servira
+          + à l'étape suivante).                                         
+       96 +DESCRIPTION_OUTIL = {                                         
+       97 +    "type": "function",                                       
+       98 +    "function": {                                             
+       99 +        "name": "calculer",                                   
+      100 +        "description": "Calcule une statistique sur les ventes
+          + de jeux vidéo (en millions d'exemplaires), "                 
+      101 +                       "sur tous les jeux ou sur ceux qui corr
+          +espondent à un filtre.",                                      
+      102 +        "parameters": {                                       
+      103 +            "type": "object",                                 
+      104 +            "properties": {                                   
+      105 +                "statistique": {                              
+      106 +                    "type": "string",                         
+      107 +                    "enum": STATISTIQUES,                     
+      108 +                    "description": "La statistique à calculer.
+          +",                                                            
+      109 +                },                                            
+      110 +                "colonne": {                                  
+      111 +                    "type": "string",                         
+      112 +                    "enum": COLONNES_VENTES,                  
+      113 +                    "description": "La colonne de ventes : mon
+          +diales, Amérique du Nord, Europe, Japon ou autres.",          
+      114 +                },                                            
+      115 +                "filtre_colonne": {                           
+      116 +                    "type": "string",                         
+      117 +                    "enum": COLONNES_FILTRE,                  
+      118 +                    "description": "Facultatif : la colonne su
+          +r laquelle filtrer les jeux.",                                
+      119 +                },                                            
+      120 +                "filtre_valeur": {                            
+      121 +                    "type": "string",                         
+      122 +                    "description": "Facultatif : la valeur che
+          +rchée dans filtre_colonne (par exemple Sports, Wii, Nintendo, 
+          +2006).",                                                      
+      123 +                },                                            
+      124 +            },                                                
+      125 +            "required": ["statistique", "colonne"],           
+      126 +        },                                                    
+      127 +    },                                                        
+      128 +}                                                             
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Write(tests\test_outil.py)
+  ⎿  Wrote 117 lines to tests\test_outil.py
+      1 # Tests de stats.py et de l'outil calculer (outil.py), sans appel
+        er le modèle.
+      2 
+      3 import csv
+      4 import os
+      5 import statistics
+      6 import sys
+      7 
+      8 # Permet d'importer stats.py et outil.py, qui se trouvent dans le
+         dossier parent.
+     … +109 lines (ctrl+o to expand)
+
+  Ran 4 shell commands (ctrl+o to expand)
+
+● La brique 1 est écrite et les tests passent : 19 tests réussis, dont 15
+  nouveaux, avec .venv\Scripts\python.exe -m pytest. Le Python global de ta
+  machine n'a pas pytest, il faut donc passer par le .venv. Je n'ai rien
+  commité.
+
+  Exemple de résultat : calculer("moyenne", "Global_Sales", "Genre", "Sports")
+  renvoie {'statistique': 'moyenne', 'colonne': 'Global_Sales', 'filtre': 'Genre
+  = Sports', 'resultat': 0.568, 'n': 2304}.
+
+  Explication des fonctions
+
+  stats.py (recopié du corrigé)
+  - moyenne(xs) : additionne toutes les valeurs, puis divise par leur nombre.
+  - mediane(xs) : trie une copie de la liste avec sorted, ce qui laisse
+    l'originale intacte. Si le nombre de valeurs est impair, elle renvoie celle
+    du milieu. S'il est pair, elle renvoie la moyenne des deux du milieu.
+  - ecart_type(xs) : pour chaque valeur, on prend l'écart à la moyenne et on le
+    met au carré. On additionne ces carrés, on divise par n − 1 (version «
+    échantillon »), puis on prend la racine carrée avec ** 0.5.
+
+  outil.py
+  - charger() : ouvre donnees/vgsales_propre.csv. Le chemin est construit à
+    partir de __file__, comme dans nettoyer.py. Chaque ligne devient un
+    dictionnaire, et les 5 colonnes de ventes passent du texte au float pour
+    pouvoir faire des calculs.
+  - filtrer(lignes, filtre_colonne, filtre_valeur) : met la valeur cherchée et
+    la valeur de chaque ligne en texte minuscule (str(...).lower()), puis garde
+    les lignes où les deux sont égales. Grâce à ça, 2006 et "2006" donnent le
+    même résultat, tout comme "sports" et "Sports".
+  - appliquer_statistique(statistique, valeurs) : une suite de if qui choisit le
+    bon calcul. nombre utilise len, somme utilise sum, et les trois autres
+    appellent stats.py.
+  - calculer(...) : la fonction que le modèle appellera. Elle fait les
+    vérifications dans cet ordre :
+    a. statistique valide ;
+    b. colonne valide ;
+    c. filtre valide (colonne de filtre connue et valeur fournie) ;
+    d. au moins un jeu après le filtre ;
+    e. au moins 2 jeux pour l'écart-type.
+
+    Dès qu'une vérification échoue, elle renvoie {"erreur": ...} avec les
+    valeurs acceptées, au lieu de planter. Sinon, elle extrait la liste des
+    ventes, fait le calcul et renvoie le dictionnaire avec le résultat arrondi à
+    3 décimales.
+  - DESCRIPTION_OUTIL : un dictionnaire au format tools d'Ollama. Il réutilise
+    les listes STATISTIQUES, COLONNES_VENTES et COLONNES_FILTRE comme enum, ce
+    qui garantit que l'outil et sa description restent toujours d'accord. Seuls
+    statistique et colonne sont obligatoires.
+
+  tests/test_outil.py
+  - Les 6 exemples du corrigé.
+  - 2 comparaisons avec un calcul indépendant : on relit le CSV avec csv et on
+    calcule avec statistics.mean ou un simple compteur.
+  - Les 2 tests de souplesse du filtre que tu as demandés.
+  - 4 cas d'erreur. Pour l'écart-type sur un seul jeu, j'utilise l'éditeur
+    Valve, qui n'a qu'un seul jeu dans les données.
+
+  Quand j'affiche les messages d'erreur dans le terminal Windows, les accents
+  sortent abîmés (�cart-type). Le texte dans le code est correct, c'est
+  seulement le terminal qui l'affiche mal.
+
+✻ Churned for 1m 9s · done 13:46
+
+> Étape A validée : commite stats.py, outil.py et tests/test_outil.py avec le   
+  message « Brique 1 : outil calculer et ses tests ».                           
+                                                                                
+  Puis étape B : agent.py, la boucle qui fait appeler mon outil par le modèle.  
+  Version simplifiée du harness.py de mon cours.                                
+                                                                                
+  1. En haut du fichier, des constantes faciles à modifier : OLLAMA_URL =       
+  "http://127.0.0.1:11434", MODELE = "qwen3.5:4b-q4_K_M", NUM_CTX = 8192,       
+  TOURS_MAX = 5, REFLEXION = False (envoyé comme "think" à Ollama).             
+  2. CONSIGNE : un message système court en français : tu réponds à des         
+  questions sur les ventes mondiales de jeux vidéo (fichier vgsales, ventes en  
+  millions d'exemplaires, années 1980 à 2016) ; tu dois TOUJOURS utiliser       
+  l'outil calculer, jamais répondre de mémoire ; quand tu as le résultat,       
+  réponds en une phrase en reprenant le nombre exact renvoyé par l'outil et le  
+  nombre de jeux utilisés.                                                      
+  3. appeler_modele(messages, avec_outil) : envoie la requête à /api/chat       
+  d'Ollama avec urllib (stream False, options num_ctx et temperature 0.2, think 
+  = REFLEXION, et tools = [DESCRIPTION_OUTIL] seulement si avec_outil).         
+  Renvoie la réponse JSON complète. Si Ollama ne répond pas, une erreur claire  
+  qui dit de lancer Ollama.                                                     
+  4. executer_appel(appel) : récupère les arguments avec .get pour les 4        
+  paramètres (statistique, colonne, filtre_colonne, filtre_valeur) et appelle   
+  calculer. Pas de **arguments, pour qu'un argument inattendu ne fasse pas      
+  planter.                                                                      
+  5. repondre(question, avec_outil=True) : la boucle. Avec outil : au plus      
+  TOURS_MAX tours ; à chaque appel d'outil, on exécute calculer et on renvoie   
+  son résultat au modèle (role "tool", contenu en JSON) ; dès que le modèle     
+  répond sans appel d'outil, c'est la réponse finale. Sans outil : un seul      
+  appel, sans consigne ni outil (le modèle seul). Elle renvoie un dictionnaire  
+  trace : question, avec_outil, liste des étapes (pour chaque appel d'outil :   
+  arguments et résultat ; pour chaque appel au modèle : prompt_eval_count et    
+  eval_count), réponse finale, nombre de tours, durée en secondes.              
+  6. enregistrer_trace(trace) : écrit la trace en JSON lisible (indent=2,       
+  ensure_ascii=False) dans traces/, avec un nom de fichier qui contient la date 
+  et l'heure.                                                                   
+  7. Lancement : python agent.py "ma question" affiche les appels d'outil au    
+  fur et à mesure, la réponse finale et le chemin de la trace. Option           
+  --sans-outil pour le modèle seul. Mets                                        
+  sys.stdout.reconfigure(encoding="utf-8") au début, comme dans le harness du   
+  cours, pour que les accents s'affichent bien sous Windows.                    
+                                                                                
+  Pas de test automatique pour agent.py pour l'instant (il dépend du modèle).   
+  Respecte CLAUDE.md. Explique-moi d'abord ton plan et attends mon accord.      
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● C'est commité : e256e65 Brique 1 : outil calculer et ses tests. Git a
+  seulement prévenu qu'il convertira les fins de ligne LF en CRLF, ce qui n'a
+  pas d'importance.
+
+  Plan pour l'étape B (agent.py)
+
+  Je ne modifie que ce fichier, en gardant son commentaire d'en-tête.
+
+  Imports. json, os, sys, time et urllib.request / urllib.error. sys et time ne
+  figurent pas dans la liste de CLAUDE.md, mais ils font partie de la
+  bibliothèque standard :
+  - sys sert à lire les arguments et à reconfigure ;
+  - time sert à mesurer la durée et à mettre la date et l'heure dans le nom du
+    fichier.
+
+  1. Constantes. OLLAMA_URL, MODELE, NUM_CTX, TOURS_MAX, REFLEXION, plus
+  TEMPERATURE = 0.2 et DOSSIER_TRACES (construit avec __file__).
+
+  2. CONSIGNE. Le message système en français, tel que tu l'as décrit.
+
+  3. appeler_modele(messages, avec_outil)
+  - Elle construit le dictionnaire de la requête et ajoute tools seulement si
+    avec_outil.
+  - Elle l'envoie avec urllib.request en JSON, avec un délai maximum de 300 s
+    parce qu'un modèle local peut être lent.
+  - Si Ollama est injoignable (URLError), elle lève une RuntimeError : «
+    Impossible de joindre Ollama à http://127.0.0.1:11434. Lance Ollama (ollama
+    serve) puis réessaie. »
+  - Si Ollama répond par une erreur (HTTPError, par exemple un modèle absent),
+    elle lève une RuntimeError qui contient le message renvoyé par Ollama, pour
+    qu'on sache quoi corriger.
+
+  4. executer_appel(appel)
+  - Elle lit appel["function"]["arguments"] puis récupère les 4 paramètres avec
+    .get.
+  - Si le modèle appelle un outil qui n'est pas calculer, ou si les arguments ne
+    sont pas un dictionnaire, elle renvoie un {"erreur": ...} au lieu de
+    planter. Le modèle peut alors se corriger au tour suivant.
+
+  5. repondre(question, avec_outil=True)
+  - Avec outil : les messages de départ sont la consigne et la question.
+    Ensuite, la boucle fait au plus TOURS_MAX appels au modèle :
+    - on note prompt_eval_count et eval_count dans les étapes ;
+    - on ajoute le message du modèle à l'historique ;
+    - s'il n'y a pas de tool_calls, c'est la réponse finale et on sort de la
+      boucle ;
+    - sinon, pour chaque appel, on exécute calculer, on affiche les arguments et
+      le résultat, on les note dans les étapes et on ajoute {"role": "tool", 
+      "content": json.dumps(resultat, ensure_ascii=False)}.
+
+    Si on atteint TOURS_MAX sans réponse finale, la réponse devient « Pas de
+    réponse finale après 5 tours ».
+  - Sans outil : un seul appel, avec la question seule.
+  - La trace renvoyée : {"question", "avec_outil", "etapes", "reponse_finale", 
+    "tours", "duree_secondes"}. Le nombre de tours correspond au nombre d'appels
+    au modèle. La durée est arrondie à 0,01 s.
+
+  6. enregistrer_trace(trace). Elle écrit la trace dans un fichier comme
+  traces/trace_2026-11-03_14-05-32.json, avec indent=2 et ensure_ascii=False,
+  puis renvoie le chemin.
+
+  7. main()
+  - Elle commence par sys.stdout.reconfigure(encoding="utf-8").
+  - Elle lit sys.argv à la main, sans argparse pour rester simple : si
+    --sans-outil est présent, on le retire, et le reste forme la question. Sans
+    question, elle affiche comment utiliser le script.
+  - Elle appelle repondre, affiche la réponse finale et le chemin de la trace.
+  - Elle attrape la RuntimeError pour afficher le message d'Ollama proprement,
+    sans pile d'erreur.
+
+  À la fin, je lance un essai réel avec une question simple, avec et sans outil,
+  si Ollama tourne. Je te montre ce qui s'affiche, sans rien commiter.
+
+  Est-ce que je peux y aller ?
+
+✻ Cooked for 28s · done 13:48
+
+> D'accord, avec trois précisions :                                             
+  1. Ajoute sys et time à la liste des modules autorisés dans CLAUDE.md.        
+  2. Dans le message role "tool", ajoute aussi "tool_name": "calculer", comme   
+  dans le harness.py de mon cours.                                              
+  3. Pour l'essai réel, utilise exactement cette question, dont on connaît la   
+  réponse (0.568 sur 2304 jeux) : « Quelle est la moyenne des ventes mondiales  
+  des jeux de genre Sports ? ». Lance-la d'abord avec outil, puis avec          
+  --sans-outil.                                                                 
+     Tu peux y aller.                                                           
+
+● Update(CLAUDE.md)
+  ⎿  Added 1 line, removed 1 line
+      1  # Règles du projet (valables pour toutes les sessions)
+      2  
+      3  ## Dépendances
+      4 -- Python bibliothèque standard uniquement (csv, json, urllib, st
+        -atistics, re, math, os). Pas de pandas.                         
+      4 +- Python bibliothèque standard uniquement (csv, json, urllib, st
+        +atistics, re, math, os, sys, time). Pas de pandas.              
+      5  - Seule dépendance externe autorisée : pytest.
+      6  
+      7  ## Style de code
+
+● Write(agent.py)
+  ⎿  Added 168 lines
+        1  # Agent : dialogue avec le modèle local via Ollama et orchestr
+           e les appels à l'outil et à l'arbitre.
+        2 +                                                              
+        3 +import json                                                   
+        4 +import os                                                     
+        5 +import sys                                                    
+        6 +import time                                                   
+        7 +import urllib.error                                           
+        8 +import urllib.request                                         
+        9 +                                                              
+       10 +from outil import DESCRIPTION_OUTIL, calculer                 
+       11 +                                                              
+       12 +# Réglages faciles à modifier.                                
+       13 +OLLAMA_URL = "http://127.0.0.1:11434"                         
+       14 +MODELE = "qwen3.5:4b-q4_K_M"                                  
+       15 +NUM_CTX = 8192                                                
+       16 +TOURS_MAX = 5                                                 
+       17 +REFLEXION = False                                             
+       18 +TEMPERATURE = 0.2                                             
+       19 +                                                              
+       20 +# Le dossier des traces part du dossier de ce fichier.        
+       21 +DOSSIER_TRACES = os.path.join(os.path.dirname(os.path.abspath(
+          +__file__)), "traces")                                         
+       22 +                                                              
+       23 +CONSIGNE = (                                                  
+       24 +    "Tu réponds à des questions sur les ventes mondiales de je
+          +ux vidéo "                                                    
+       25 +    "(fichier vgsales, ventes en millions d'exemplaires, année
+          +s 1980 à 2016). "                                             
+       26 +    "Tu dois TOUJOURS utiliser l'outil calculer, jamais répond
+          +re de mémoire. "                                              
+       27 +    "Quand tu as le résultat, réponds en une phrase en reprena
+          +nt le nombre exact "                                          
+       28 +    "renvoyé par l'outil et le nombre de jeux utilisés."      
+       29 +)                                                             
+       30 +                                                              
+       31 +                                                              
+       32 +def appeler_modele(messages, avec_outil):                     
+       33 +    """Envoie les messages à l'API /api/chat d'Ollama et renvo
+          +ie sa réponse JSON complète."""                               
+       34 +    requete = {                                               
+       35 +        "model": MODELE,                                      
+       36 +        "messages": messages,                                 
+       37 +        "stream": False,                                      
+       38 +        "think": REFLEXION,                                   
+       39 +        "options": {"num_ctx": NUM_CTX, "temperature": TEMPERA
+          +TURE},                                                        
+       40 +    }                                                         
+       41 +    if avec_outil:                                            
+       42 +        requete["tools"] = [DESCRIPTION_OUTIL]                
+       43 +                                                              
+       44 +    donnees = json.dumps(requete).encode("utf-8")             
+       45 +    demande = urllib.request.Request(                         
+       46 +        OLLAMA_URL + "/api/chat",                             
+       47 +        data=donnees,                                         
+       48 +        headers={"Content-Type": "application/json"},         
+       49 +    )                                                         
+       50 +    try:                                                      
+       51 +        with urllib.request.urlopen(demande, timeout=300) as r
+          +eponse:                                                       
+       52 +            return json.loads(reponse.read().decode("utf-8")) 
+       53 +    except urllib.error.HTTPError as erreur:                  
+       54 +        detail = erreur.read().decode("utf-8")                
+       55 +        raise RuntimeError("Ollama a renvoyé une erreur " + st
+          +r(erreur.code) + " : " + detail)                              
+       56 +    except urllib.error.URLError:                             
+       57 +        raise RuntimeError("Impossible de joindre Ollama à " +
+          + OLLAMA_URL                                                   
+       58 +                           + ". Lance Ollama (ollama serve) pu
+          +is réessaie.")                                                
+       59 +                                                              
+       60 +                                                              
+       61 +def executer_appel(appel):                                    
+       62 +    """Exécute un appel d'outil demandé par le modèle et renvo
+          +ie le résultat de calculer."""                                
+       63 +    fonction = appel.get("function", {})                      
+       64 +    if fonction.get("name") != "calculer":                    
+       65 +        return {"erreur": "Outil inconnu : " + str(fonction.ge
+          +t("name")) + ". Seul l'outil calculer existe."}               
+       66 +    arguments = fonction.get("arguments")                     
+       67 +    if not isinstance(arguments, dict):                       
+       68 +        return {"erreur": "Les arguments de calculer doivent ê
+          +tre un objet JSON."}                                          
+       69 +    return calculer(                                          
+       70 +        arguments.get("statistique"),                         
+       71 +        arguments.get("colonne"),                             
+       72 +        arguments.get("filtre_colonne"),                      
+       73 +        arguments.get("filtre_valeur"),                       
+       74 +    )                                                         
+       75 +                                                              
+       76 +                                                              
+       77 +def noter_appel_modele(etapes, reponse):                      
+       78 +    """Ajoute aux étapes le nombre de jetons lus (prompt) et p
+          +roduits (réponse) par le modèle."""                           
+       79 +    etapes.append({                                           
+       80 +        "type": "modele",                                     
+       81 +        "prompt_eval_count": reponse.get("prompt_eval_count"),
+       82 +        "eval_count": reponse.get("eval_count"),              
+       83 +    })                                                        
+       84 +                                                              
+       85 +                                                              
+       86 +def repondre(question, avec_outil=True):                      
+       87 +    """Pose la question au modèle (avec ou sans l'outil) et re
+          +nvoie la trace complète de l'échange."""                      
+       88 +    debut = time.perf_counter()                               
+       89 +    etapes = []                                               
+       90 +    tours = 0                                                 
+       91 +    reponse_finale = "Pas de réponse finale après " + str(TOUR
+          +S_MAX) + " tours."                                            
+       92 +                                                              
+       93 +    if avec_outil:                                            
+       94 +        messages = [                                          
+       95 +            {"role": "system", "content": CONSIGNE},          
+       96 +            {"role": "user", "content": question},            
+       97 +        ]                                                     
+       98 +        while tours < TOURS_MAX:                              
+       99 +            tours = tours + 1                                 
+      100 +            reponse = appeler_modele(messages, True)          
+      101 +            noter_appel_modele(etapes, reponse)               
+      102 +            message = reponse["message"]                      
+      103 +            messages.append(message)                          
+      104 +            appels = message.get("tool_calls")                
+      105 +            if not appels:                                    
+      106 +                reponse_finale = message.get("content", "")   
+      107 +                break                                         
+      108 +            for appel in appels:                              
+      109 +                resultat = executer_appel(appel)              
+      110 +                arguments = appel.get("function", {}).get("arg
+          +uments")                                                      
+      111 +                print("Appel de l'outil :", json.dumps(argumen
+          +ts, ensure_ascii=False))                                      
+      112 +                print("Résultat :", json.dumps(resultat, ensur
+          +e_ascii=False))                                               
+      113 +                etapes.append({"type": "outil", "arguments": a
+          +rguments, "resultat": resultat})                              
+      114 +                messages.append({                             
+      115 +                    "role": "tool",                           
+      116 +                    "tool_name": "calculer",                  
+      117 +                    "content": json.dumps(resultat, ensure_asc
+          +ii=False),                                                    
+      118 +                })                                            
+      119 +    else:                                                     
+      120 +        messages = [{"role": "user", "content": question}]    
+      121 +        tours = 1                                             
+      122 +        reponse = appeler_modele(messages, False)             
+      123 +        noter_appel_modele(etapes, reponse)                   
+      124 +        reponse_finale = reponse["message"].get("content", "")
+      125 +                                                              
+      126 +    return {                                                  
+      127 +        "question": question,                                 
+      128 +        "avec_outil": avec_outil,                             
+      129 +        "etapes": etapes,                                     
+      130 +        "reponse_finale": reponse_finale,                     
+      131 +        "tours": tours,                                       
+      132 +        "duree_secondes": round(time.perf_counter() - debut, 2
+          +),                                                            
+      133 +    }                                                         
+      134 +                                                              
+      135 +                                                              
+      136 +def enregistrer_trace(trace):                                 
+      137 +    """Écrit la trace en JSON lisible dans traces/, avec la da
+          +te et l'heure dans le nom, et renvoie le chemin."""           
+      138 +    nom = "trace_" + time.strftime("%Y-%m-%d_%H-%M-%S") + ".js
+          +on"                                                           
+      139 +    chemin = os.path.join(DOSSIER_TRACES, nom)                
+      140 +    with open(chemin, "w", encoding="utf-8") as fichier:      
+      141 +        json.dump(trace, fichier, indent=2, ensure_ascii=False
+          +)                                                             
+      142 +    return chemin                                             
+      143 +                                                              
+      144 +                                                              
+      145 +def main():                                                   
+      146 +    """Lit la question sur la ligne de commande, interroge le 
+          +modèle et affiche la réponse."""                              
+      147 +    sys.stdout.reconfigure(encoding="utf-8")                  
+      148 +    arguments = sys.argv[1:]                                  
+      149 +    avec_outil = True                                         
+      150 +    if "--sans-outil" in arguments:                           
+      151 +        avec_outil = False                                    
+      152 +        arguments.remove("--sans-outil")                      
+      153 +    if len(arguments) == 0:                                   
+      154 +        print('Utilisation : python agent.py "ma question" [--
+          +sans-outil]')                                                 
+      155 +        return                                                
+      156 +                                                              
+      157 +    question = " ".join(arguments)                            
+      158 +    try:                                                      
+      159 +        trace = repondre(question, avec_outil)                
+      160 +    except RuntimeError as erreur:                            
+      161 +        print("Erreur :", erreur)                             
+      162 +        return                                                
+      163 +                                                              
+      164 +    print("Réponse finale :", trace["reponse_finale"])        
+      165 +    print("Trace enregistrée :", enregistrer_trace(trace))    
+      166 +                                                              
+      167 +                                                              
+      168 +if __name__ == "__main__":                                    
+      169 +    main()                                                    
+
+● Bash(.venv/Scripts/python.exe agent.py "Quelle est la moyenne des ventes
+      mondiales des jeux de genre Sports ?" 2>&1)
+  ⎿  Appel de l'outil : {"statistique": "moyenne", "colonne": "Global_Sales
+     ", "filtre_colonne": "Genre", "filtre_valeur": "Sports"}
+     Résultat : {"statistique": "moyenne", "colonne": "Global_Sales", "filt
+     … +5 lines (ctrl+o to expand)
+  ⎿  Created traces\trace_2026-11-03_13-51-46.json (+35 -0)
+       1 +{                                                              
+       2 +  "question": "Quelle est la moyenne des ventes mondiales des j
+         +eux de genre Sports ?",                                        
+       3 +  "avec_outil": true,                                          
+       4 +  "etapes": [                                                  
+       5 +    {                                                          
+       6 +      "type": "modele",                                        
+       7 +      "prompt_eval_count": 596,                                
+       8 +      "eval_count": 75                                         
+       9 +    },                                                         
+      10 +    {                                                          
+      11 +      "type": "outil",                                         
+      12 +      "arguments": {                                           
+      13 +        "statistique": "moyenne",                              
+      14 +        "colonne": "Global_Sales",                             
+      15 +        "filtre_colonne": "Genre",                             
+      16 +        "filtre_valeur": "Sports"                              
+      17 +      },                                                       
+      18 +      "resultat": {                                            
+      19 +        "statistique": "moyenne",                              
+      20 +        "colonne": "Global_Sales",                             
+      21 +        "filtre": "Genre = Sports",                            
+      22 +        "resultat": 0.568,                                     
+      23 +        "n": 2304                                              
+      24 +      }                                                        
+      25 +    },                                                         
+      26 +    {                                                          
+      27 +      "type": "modele",                                        
+      28 +      "prompt_eval_count": 731,                                
+      29 +      "eval_count": 37                                         
+      30 +    }                                                          
+      31 +  ],                                                           
+      32 +  "reponse_finale": "La moyenne des ventes mondiales des jeux d
+         +e genre Sports est de 0,568 million d'exemplaires sur les 2304 
+         +jeux analysés.",                                               
+      33 +  "tours": 2,                                                  
+      34 +  "duree_secondes": 71.92                                      
+      35 +}                                                              
+  ⎿  (timeout 10m)
+
+● Bash(.venv/Scripts/python.exe agent.py "Quelle est la moyenne des ventes
+      mondiales des jeux de genre Sports ?" --sans-outil 2>&1; cat
+      traces/trace_2026-11-03_13-51-4…)
+  ⎿  Réponse finale : Il n'existe pas un chiffre unique et fixe pour la "mo
+     yenne des ventes mondiales" des jeux de genre **Sports**, car ce genre
+      ne représente qu'une partie du marché vidéo-gaming global. Les chiffr
+     … +47 lines (ctrl+o to expand)
+  ⎿  Created traces\trace_2026-11-03_13-53-28.json (+14 -0)
+       1 +{                                                              
+       2 +  "question": "Quelle est la moyenne des ventes mondiales des j
+         +eux de genre Sports ?",                                        
+       3 +  "avec_outil": false,                                         
+       4 +  "etapes": [                                                  
+       5 +    {                                                          
+       6 +      "type": "modele",                                        
+       7 +      "prompt_eval_count": 27,                                 
+       8 +      "eval_count": 428                                        
+       9 +    }                                                          
+      10 +  ],                                                           
+      11 +  "reponse_finale": "Il n'existe pas un chiffre unique et fixe 
+         +pour la \"moyenne des ventes mondiales\" des jeux de genre **Sp
+         +orts**, car ce genre ne représente qu'une partie du marché vidé
+         +o-gaming global. Les chiffres varient considérablement selon l'
+         +année, les régions (le marché asiatique étant souvent plus volu
+         +mineux), et si l'on inclut ou non les jeux mobiles (qui dominen
+         +t le marché mais sont moins orientés \"sports\" pur).\n\nCepend
+         +ant, on peut se baser sur les données de rapports majeurs comme
+         + ceux d'**Newzoo** (maintenant partiellement intégré à Data Del
+         +ve) ou d'**Statista** pour estimer la situation :\n\n1.  **Part
+         + du marché** : Le genre Sports représente généralement entre **
+         +5 % et 8 %** des ventes totales de jeux vidéo mondiaux.\n2.  **
+         +Chiffres bruts estimés** : Avec un marché global qui dépasse ré
+         +gulièrement les **200 milliards de dollars** (environ 190-210 m
+         +illiards USD en 2023-2024 selon les sources), cela signifie que
+         + le secteur des jeux Sports génère annuellement entre **10 et 1
+         +6 milliards de dollars**.\n3.  **Les titulaires** : Ce chiffre 
+         +est très influencé par quelques \"titans\" comme *FIFA* (mainte
+         +nant *EA Sports FC*), *NBA 2K*, *Madden NFL*, ou *eFootball*. S
+         +i l'on retire ces titres phares, la moyenne des ventes des autr
+         +es jeux de ce genre chute drastiquement.\n\n**Conclusion :**\n\
+         +nLa vente mondiale annuelle du genre **Sports** se situe approx
+         +imativement entre **10 et 15 milliards de dollars par an**.\n\n
+         +Il est important de noter que cette moyenne est tirée vers le h
+         +aut par les succès commerciaux exceptionnels d'un petit nombre 
+         +de jeux (souvent des titres exclusifs ou très populaires), tand
+         +is que la majorité des autres jeux de ce genre génèrent des rev
+         +enus beaucoup plus modestes.",                                 
+      12 +  "tours": 1,                                                  
+      13 +  "duree_secondes": 96.81                                      
+      14 +}                                                              
+  ⎿  (timeout 10m)
+
+● J'ai écrit agent.py et ajouté sys et time dans CLAUDE.md. Les deux essais avec
+  ta question ont fonctionné.
+
+  Essais réels
+
+  Avec outil (2 tours, 71,9 s)
+  Appel de l'outil : {"statistique": "moyenne", "colonne": "Global_Sales", 
+  "filtre_colonne": "Genre", "filtre_valeur": "Sports"}
+  Résultat : {"statistique": "moyenne", "colonne": "Global_Sales", "filtre": 
+  "Genre = Sports", "resultat": 0.568, "n": 2304}
+  Réponse finale : La moyenne des ventes mondiales des jeux de genre Sports est 
+  de 0,568 million d'exemplaires sur les 2304 jeux analysés.
+  C'est la bonne réponse : 0,568 sur 2304 jeux. Le modèle a choisi les bons
+  arguments du premier coup. La durée inclut sans doute le chargement du modèle
+  en mémoire au premier appel.
+
+  Sans outil. Le modèle répond de mémoire par un long texte sur un tout autre
+  sujet : le chiffre d'affaires en dollars du genre Sports, environ 10 à 15
+  milliards par an, avec des sources citées (Newzoo, Statista). Il ne donne
+  aucune moyenne en millions d'exemplaires et rien qui vienne du fichier. Ça
+  montre bien à quoi sert l'outil.
+
+  Les deux traces sont dans traces/ : trace_2026-11-03_13-51-46.json (avec
+  outil) et trace_2026-11-03_13-53-28.json (sans outil). Pour chaque appel au
+  modèle, la trace note prompt_eval_count et eval_count, et pour chaque appel
+  d'outil ses arguments et son résultat.
+
+  Explication des fonctions
+
+  - appeler_modele(messages, avec_outil) : construit la requête (modèle,
+    messages, stream à False, think, num_ctx et température). Elle ajoute la
+    description de l'outil seulement si on le demande. Elle envoie le tout à
+    /api/chat et renvoie le JSON reçu. Si Ollama est éteint, elle lève une
+    erreur qui dit de le lancer. Si Ollama répond par une erreur, elle lève une
+    erreur qui reprend son message.
+  - executer_appel(appel) : vérifie que le modèle demande bien calculer et que
+    les arguments forment un dictionnaire. Elle lit ensuite les 4 paramètres
+    avec .get, qui donne None pour un paramètre absent, et appelle calculer. Un
+    argument en trop est simplement ignoré.
+  - noter_appel_modele(etapes, reponse) : une petite fonction d'aide que j'ai
+    ajoutée parce que le même code servait aux deux modes. Elle note dans les
+    étapes le nombre de jetons lus et produits par le modèle.
+  - repondre(question, avec_outil) :
+    - avec outil, on part de la consigne et de la question. À chaque tour, on
+      appelle le modèle. S'il ne demande pas d'outil, sa réponse est la réponse
+      finale. Sinon, on exécute calculer, on affiche l'appel et on renvoie le
+      résultat au modèle dans un message tool qui contient tool_name. On
+      s'arrête au plus tard après TOURS_MAX tours ;
+    - sans outil, on fait un seul appel avec la question seule ;
+    - dans les deux cas, elle renvoie la trace avec la durée mesurée par
+      time.perf_counter.
+  - enregistrer_trace(trace) : fabrique un nom de fichier qui contient la date
+    et l'heure, écrit le JSON lisible avec les accents et renvoie le chemin.
+  - main() : règle la sortie en UTF-8 et lit la question sur la ligne de
+    commande, en retirant --sans-outil s'il est présent. Elle appelle repondre,
+    puis affiche la réponse et le chemin de la trace. Une erreur Ollama
+    s'affiche en une ligne, sans pile d'erreur.
+
+  Je n'ai rien commité. Il reste à commiter agent.py, CLAUDE.md et, si tu veux,
+  les deux fichiers de trace.
+
+✻ Cogitated for 3m 30s · done 13:53
+
+※ recap: Tu construis un outil de calcul que le modèle local appelle via Ollama ; agent.py est écrit et trouve bien 0,568 sur 2304 jeux pour Sports. Il reste à commiter agent.py, CLAUDE.md et éventuellement les deux traces, si tu me le demandes. (disable recaps in /config)
+
+> Parfait. Commite agent.py, CLAUDE.md et les deux traces (ce sont les preuves  
+  de la brique 1) avec le message « Brique 1 : agent et premières traces        
+  réelles ».                                                                    
+                                                                                
+  Puis remplis la section Brique 1 de EVIDENCE.md, sur le même modèle que la    
+  brique 6 :                                                                    
+  - Ce que je montre : le modèle Qwen3.5-4B (local, Ollama) appelle ma fonction 
+  calculer() ; la trace montre l'appel réel, ses arguments, le résultat         
+  renvoyé et la réponse finale qui reprend ce résultat. En comparaison, sans    
+  outil, le modèle répond hors sujet (chiffre d'affaires en dollars cité de     
+  mémoire).                                                                     
+  - Fichiers : outil.py, stats.py, agent.py, tests/test_outil.py,               
+  traces/trace_2026-11-03_13-51-46.json (avec outil),                           
+  traces/trace_2026-11-03_13-53-28.json (sans outil).                           
+  - Commandes pour reproduire : python agent.py "Quelle est la moyenne des      
+  ventes mondiales des jeux de genre Sports ?" puis la même avec --sans-outil ; 
+  et .venv/Scripts/python -m pytest pour les tests de l'outil.                  
+  - Résultat attendu : appel de calculer("moyenne", "Global_Sales", "Genre",    
+  "Sports"), résultat 0.568 sur 2304 jeux. Préciser qu'une nouvelle exécution   
+  produit une nouvelle trace et que la formulation de la réponse peut varier    
+  d'un essai à l'autre.                                                         
+                                                                                
+  Commite EVIDENCE.md avec le message « EVIDENCE brique 1 ».                    
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Update(EVIDENCE.md)
+  ⎿  Added 16 lines
+       2  
+       3  ## Brique 1 — Outil
+       4  
+       5 +**Ce que je montre** : le modèle Qwen3.5-4B (local, via Ollama)
+         + appelle ma fonction `calculer()`.                             
+       6 +- La trace montre l'appel réel, ses arguments, le résultat renv
+         +oyé par l'outil et la réponse finale qui reprend ce résultat.  
+       7 +- En comparaison, sans outil, le modèle répond hors sujet : un 
+         +chiffre d'affaires en dollars, cité de mémoire.                
+       8 +                                                               
+       9 +**Fichiers** : `outil.py`, `stats.py`, `agent.py`, `tests/test_
+         +outil.py`, `traces/trace_2026-11-03_13-51-46.json` (avec outil)
+         +, `traces/trace_2026-11-03_13-53-28.json` (sans outil).        
+      10 +                                                               
+      11 +**Commandes pour reproduire** :                                
+      12 +```                                                            
+      13 +python agent.py "Quelle est la moyenne des ventes mondiales des
+         + jeux de genre Sports ?"                                       
+      14 +python agent.py "Quelle est la moyenne des ventes mondiales des
+         + jeux de genre Sports ?" --sans-outil                          
+      15 +.venv/Scripts/python -m pytest                                 
+      16 +```                                                            
+      17 +                                                               
+      18 +**Résultat attendu** : appel de `calculer("moyenne", "Global_Sa
+         +les", "Genre", "Sports")`, résultat 0.568 sur 2304 jeux, repris
+         + dans la réponse finale ; 19 tests passés (dont 15 pour l'outil
+         +).                                                             
+      19 +Chaque nouvelle exécution produit une nouvelle trace dans `trac
+         +es/`, et la formulation de la réponse du modèle peut varier d'u
+         +n essai à l'autre.                                             
+      20 +                                                               
+      21  ## Brique 3 — Règle imposée par le code
+      22  
+      23  ## Brique 6 — Données sales
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● J'ai fait les deux commits et le dépôt n'a plus aucune modification en attente
+  :
+
+  - bb6f6b0 Brique 1 : agent et premières traces réelles : agent.py, CLAUDE.md
+    et les deux traces.
+  - 99d66d5 EVIDENCE brique 1 : la section Brique 1 de EVIDENCE.md, remplie sur
+    le modèle de la brique 6.
+
+  La section contient ce que tu as demandé : ce que tu montres, les fichiers,
+  les 3 commandes pour reproduire, et le résultat attendu (calculer("moyenne", 
+  "Global_Sales", "Genre", "Sports") donne 0.568 sur 2304 jeux). J'ai ajouté la
+  mention qu'une nouvelle exécution crée une nouvelle trace et que la
+  formulation de la réponse peut varier d'un essai à l'autre.
+
+  J'ai aussi ajouté une précision que tu n'avais pas demandée : « 19 tests
+  passés (dont 15 pour l'outil) ». C'est le nombre de tests de mon dernier
+  lancement de pytest, qui comprend aussi les 4 tests du nettoyage. Dis-moi si
+  tu préfères l'enlever.
+
+✻ Baked for 15s · done 14:09
+> Nouvelle étape : brique 3, une règle imposée par le code. Règle : aucune      
+  réponse finale ne doit contenir un nombre qui n'a pas été calculé par         
+  l'outil.                                                                      
+                                                                                
+  1. arbitre.py :                                                               
+  - extraire_nombres(texte) : reprends la fonction extraire() du comparer.py de 
+  mon cours, pour comprendre "0,568" et "2 304" :                               
+      t = re.sub(r"(?<=\d)[  ,](?=\d{3}(?!\d))", "", texte)                     
+      t = re.sub(r"(?<=\d),(?=\d)", ".", t)                                     
+      return [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", t)]              
+    (le premier crochet contient une espace normale et une espace insécable).   
+  Docstring qui explique chaque ligne simplement.                               
+  - nombres_autorises(resultats_outil, question) : la liste des "resultat" et   
+  "n" de chaque résultat d'outil sans erreur, plus les nombres présents dans la 
+  question.                                                                     
+  - est_justifie(nombre, autorises) : vrai si le nombre est à moins de 1 % d'un 
+  nombre autorisé (pour accepter un arrondi honnête comme 0,57 pour 0,568).     
+  - verifier(reponse, resultats_outil, question) : renvoie un dictionnaire      
+  {"autorisee": True/False, "nombres_non_justifies": [...]}. Une réponse sans   
+  aucun nombre est autorisée.                                                   
+                                                                                
+  2. Dans agent.py, mode avec outil seulement : garder la liste des résultats   
+  d'outil ; après la réponse finale, appeler verifier. Si la réponse n'est pas  
+  autorisée, la remplacer par « Réponse bloquée par l'arbitre : les nombres X   
+  n'ont été calculés par aucun outil. » Ajouter à la trace une clé "arbitre"    
+  avec le résultat de verifier et la réponse d'origine du modèle. Ajouter aussi 
+  à la CONSIGNE : « N'écris aucun autre nombre que ceux renvoyés par l'outil.   
+  »                                                                             
+  3. tests/test_arbitre.py :                                                    
+  - extraire_nombres comprend "0,568" et "2 304" ;                              
+  - une réponse avec le bon résultat est autorisée ; avec "0,57" autorisée ;    
+  avec "0,6" bloquée ; avec un nombre inventé bloquée ; sans aucun nombre       
+  autorisée ; un nombre venant de la question (une année) autorisé ;            
+  - le test de triche : avec monkeypatch, remplacer agent.appeler_modele par un 
+  faux modèle qui répond directement « La moyenne est de 42 millions            
+  d'exemplaires. » sans appeler l'outil ; vérifier que repondre() renvoie une   
+  réponse bloquée et que la trace contient arbitre.autorisee == False. Ce test  
+  ne doit pas avoir besoin d'Ollama.                                            
+                                                                                
+  Respecte CLAUDE.md. Explique-moi d'abord ton plan et attends mon accord.      
+
+● Voici mon plan pour la brique 3. Il touche arbitre.py, agent.py et un nouveau
+  fichier tests/test_arbitre.py.
+
+  1. arbitre.py
+
+  Le fichier ne contient pour l'instant qu'une ligne de commentaire, que je
+  garde. J'importe re.
+
+  - extraire_nombres(texte) : les 3 lignes de extraire() recopiées sans rien
+    changer, avec une espace normale et une espace insécable dans le premier
+    crochet. La docstring explique chaque ligne :
+    a. On enlève le séparateur de milliers ("2 304" devient "2304").
+    b. On remplace la virgule décimale par un point ("0,568" devient "0.568").
+    c. On récupère tous les nombres et on les convertit en float.
+
+    La dernière ligne est une compréhension simple, pas imbriquée, donc elle
+    respecte CLAUDE.md.
+  - nombres_autorises(resultats_outil, question) : une boucle qui ajoute
+    resultat et n de chaque résultat sans clé "erreur", puis les nombres de la
+    question.
+  - est_justifie(nombre, autorises) : vrai si un nombre autorisé a vérifie
+    abs(nombre - a) <= 0.01 * abs(a). Par exemple, 0,57 passe pour 0,568 (écart
+    de 0,002, sous le seuil de 0,0057), mais 0,6 est bloqué (écart de 0,032). Un
+    0 autorisé n'accepte que 0 exactement.
+  - verifier(reponse, resultats_outil, question) : extrait les nombres de la
+    réponse et garde ceux qui ne sont pas justifiés. Elle renvoie {"autorisee": 
+    len(non_justifies) == 0, "nombres_non_justifies": [...]}. Une réponse sans
+    nombre donne une liste vide, donc elle est autorisée.
+  - formater_nombre(nombre) : une petite fonction d'aide que j'ajoute pour que
+    le message de blocage affiche « 42 » et non « 42.0 ». Si le nombre est
+    entier, on l'écrit sans décimales.
+
+  2. agent.py (mode avec outil seulement)
+
+  - J'ajoute la phrase demandée à la CONSIGNE.
+  - Une liste resultats_outil reçoit chaque résultat de calculer dans la boucle.
+  - Quand le modèle donne sa réponse finale, on appelle verifier(reponse, 
+    resultats_outil, question). Si la réponse n'est pas autorisée, elle est
+    remplacée par « Réponse bloquée par l'arbitre : les nombres 42 n'ont été
+    calculés par aucun outil. »
+  - La trace reçoit "arbitre": {"autorisee", "nombres_non_justifies", 
+    "reponse_modele"}. reponse_modele est la réponse d'origine du modèle.
+  - À noter : on ne vérifie que les vraies réponses du modèle. Notre propre
+    message « Pas de réponse finale après 5 tours » contient le nombre 5 et
+    serait bloqué à tort. Dans ce cas, "arbitre" vaut None.
+  - Le mode sans outil ne change pas. Il reste la comparaison « modèle seul ».
+
+  3. tests/test_arbitre.py
+
+  - extraire_nombres("0,568 sur 2 304 jeux") == [0.568, 2304.0]. Je teste aussi
+    l'espace insécable ("2\u00a0304").
+  - Les cas de verifier, avec le résultat d'outil réel {"resultat": 0.568, "n": 
+    2304, ...} :
+    - le bon résultat est autorisé ;
+    - « 0,57 » est autorisé ;
+    - « 0,6 » est bloqué ;
+    - « 42 » est bloqué ;
+    - une réponse sans nombre est autorisée ;
+    - « 2006 » est autorisé quand il vient de la question « … en 2006 ? ».
+  - Le test de triche : un faux appeler_modele(messages, avec_outil) renvoie
+    {"message": {"role": "assistant", "content": "La moyenne est de 42 millions 
+    d'exemplaires."}}, et monkeypatch.setattr(agent, "appeler_modele", faux)
+    remplace le vrai. On vérifie ensuite que la réponse commence par « Réponse
+    bloquée par l'arbitre », que trace["arbitre"]["autorisee"] is False et que
+    42.0 figure dans les nombres non justifiés. Ce test n'appelle pas Ollama.
+
+  Limite assumée par la règle : si le modèle recopie un nombre de la consigne,
+  par exemple « années 1980 à 2016 », sa réponse sera bloquée. Ces nombres ne
+  viennent ni de l'outil ni de la question.
+
+  À la fin, je lance pytest, puis un essai réel avec la question Sports pour
+  vérifier que la bonne réponse passe toujours l'arbitre. Je ne commite rien
+  sans ton accord.
+
+  Est-ce que je peux y aller ?
+
+✻ Churned for 23s · done 14:11
+
+> D'accord, tu peux y aller.                                                    
+
+  Read 1 file (ctrl+o to expand)
+
+● Write(arbitre.py)
+  ⎿  Added 56 lines
+       1  # Arbitre : bloque toute réponse contenant un chiffre qui n'a p
+          as été calculé par l'outil.
+       2 +                                                               
+       3 +import re                                                      
+       4 +                                                               
+       5 +                                                               
+       6 +def extraire_nombres(texte):                                   
+       7 +    """Renvoie la liste des nombres (float) écrits dans le text
+         +e, en comprenant "0,568" et "2 304".                           
+       8 +                                                               
+       9 +    Ligne 1 : enlève l'espace (normale ou insécable) ou la virg
+         +ule qui sépare les milliers,                                   
+      10 +              par exemple "2 304" devient "2304" (un chiffre av
+         +ant, exactement 3 chiffres après).                             
+      11 +    Ligne 2 : remplace la virgule décimale entre deux chiffres 
+         +par un point : "0,568" devient "0.568".                        
+      12 +    Ligne 3 : trouve tous les nombres (signe moins et partie dé
+         +cimale facultatifs) et les convertit en float.                 
+      13 +    """                                                        
+      14 +    t = re.sub(r"(?<=\d)[  ,](?=\d{3}(?!\d))", "", texte)      
+      15 +    t = re.sub(r"(?<=\d),(?=\d)", ".", t)                      
+      16 +    return [float(x) for x in re.findall(r"-?\d+(?:\.\d+)?", t)
+         +]                                                              
+      17 +                                                               
+      18 +                                                               
+      19 +def nombres_autorises(resultats_outil, question):              
+      20 +    """Renvoie les nombres que la réponse a le droit de citer :
+         + "resultat" et "n" de chaque                                   
+      21 +    résultat d'outil sans erreur, plus les nombres présents dan
+         +s la question."""                                              
+      22 +    autorises = []                                             
+      23 +    for resultat in resultats_outil:                           
+      24 +        if "erreur" not in resultat:                           
+      25 +            autorises.append(resultat["resultat"])             
+      26 +            autorises.append(resultat["n"])                    
+      27 +    for nombre in extraire_nombres(question):                  
+      28 +        autorises.append(nombre)                               
+      29 +    return autorises                                           
+      30 +                                                               
+      31 +                                                               
+      32 +def est_justifie(nombre, autorises):                           
+      33 +    """Vrai si le nombre est à moins de 1 % d'un nombre autoris
+         +é (accepte un arrondi honnête)."""                             
+      34 +    for autorise in autorises:                                 
+      35 +        if abs(nombre - autorise) <= 0.01 * abs(autorise):     
+      36 +            return True                                        
+      37 +    return False                                               
+      38 +                                                               
+      39 +                                                               
+      40 +def verifier(reponse, resultats_outil, question):              
+      41 +    """Vérifie que chaque nombre de la réponse est justifié. Un
+         +e réponse sans nombre est autorisée.                           
+      42 +                                                               
+      43 +    Renvoie {"autorisee": True/False, "nombres_non_justifies": 
+         +[...]}.                                                        
+      44 +    """                                                        
+      45 +    autorises = nombres_autorises(resultats_outil, question)   
+      46 +    non_justifies = []                                         
+      47 +    for nombre in extraire_nombres(reponse):                   
+      48 +        if not est_justifie(nombre, autorises):                
+      49 +            non_justifies.append(nombre)                       
+      50 +    return {"autorisee": len(non_justifies) == 0, "nombres_non_
+         +justifies": non_justifies}                                     
+      51 +                                                               
+      52 +                                                               
+      53 +def formater_nombre(nombre):                                   
+      54 +    """Écrit un nombre sans ".0" quand il est entier (42.0 devi
+         +ent "42") pour un message lisible."""                          
+      55 +    if nombre == int(nombre):                                  
+      56 +        return str(int(nombre))                                
+      57 +    return str(nombre)                                         
+
+● Update(agent.py)
+  ⎿  Added 1 line
+       7  import urllib.error
+       8  import urllib.request
+       9  
+      10 +from arbitre import formater_nombre, verifier                  
+      11  from outil import DESCRIPTION_OUTIL, calculer
+      12  
+      13  # Réglages faciles à modifier.
+
+● Update(agent.py)
+  ⎿  Added 2 lines, removed 1 line
+      26      "(fichier vgsales, ventes en millions d'exemplaires, années
+           1980 à 2016). "
+      27      "Tu dois TOUJOURS utiliser l'outil calculer, jamais répondr
+          e de mémoire. "
+      28      "Quand tu as le résultat, réponds en une phrase en reprenan
+          t le nombre exact "
+      29 -    "renvoyé par l'outil et le nombre de jeux utilisés."       
+      29 +    "renvoyé par l'outil et le nombre de jeux utilisés. "      
+      30 +    "N'écris aucun autre nombre que ceux renvoyés par l'outil."
+      31  )
+      32  
+      33  
+
+● Update(agent.py)
+  ⎿  Added 21 lines
+       85      })
+       86  
+       87  
+       88 +def appliquer_arbitre(reponse_modele, resultats_outil, questio
+          +n):                                                           
+       89 +    """Vérifie la réponse du modèle avec l'arbitre. Renvoie (r
+          +éponse à afficher, informations pour la trace)."""            
+       90 +    verdict = verifier(reponse_modele, resultats_outil, questi
+          +on)                                                           
+       91 +    infos = {                                                 
+       92 +        "autorisee": verdict["autorisee"],                    
+       93 +        "nombres_non_justifies": verdict["nombres_non_justifie
+          +s"],                                                          
+       94 +        "reponse_modele": reponse_modele,                     
+       95 +    }                                                         
+       96 +    if verdict["autorisee"]:                                  
+       97 +        return reponse_modele, infos                          
+       98 +    textes = []                                               
+       99 +    for nombre in verdict["nombres_non_justifies"]:           
+      100 +        textes.append(formater_nombre(nombre))                
+      101 +    message = ("Réponse bloquée par l'arbitre : les nombres " 
+          ++ ", ".join(textes)                                           
+      102 +               + " n'ont été calculés par aucun outil.")      
+      103 +    return message, infos                                     
+      104 +                                                              
+      105 +                                                              
+      106  def repondre(question, avec_outil=True):
+      107      """Pose la question au modèle (avec ou sans l'outil) et re
+           nvoie la trace complète de l'échange."""
+      108      debut = time.perf_counter()
+      109      etapes = []
+      110      tours = 0
+      111      reponse_finale = "Pas de réponse finale après " + str(TOUR
+           S_MAX) + " tours."
+      112 +    # Reste None si le modèle n'a jamais donné de réponse fina
+          +le (rien à vérifier).                                         
+      113 +    arbitre = None                                            
+      114  
+      115      if avec_outil:
+      116 +        resultats_outil = []                                  
+      117          messages = [
+      118              {"role": "system", "content": CONSIGNE},
+      119              {"role": "user", "content": question},
+
+● Update(agent.py)
+  ⎿  Added 2 lines, removed 1 line
+      126              messages.append(message)
+      127              appels = message.get("tool_calls")
+      128              if not appels:
+      129 -                reponse_finale = message.get("content", "")   
+      129 +                reponse_finale, arbitre = appliquer_arbitre(me
+          +ssage.get("content", ""), resultats_outil, question)          
+      130                  break
+      131              for appel in appels:
+      132                  resultat = executer_appel(appel)
+      133 +                resultats_outil.append(resultat)              
+      134                  arguments = appel.get("function", {}).get("arg
+           uments")
+      135                  print("Appel de l'outil :", json.dumps(argumen
+           ts, ensure_ascii=False))
+      136                  print("Résultat :", json.dumps(resultat, ensur
+           e_ascii=False))
+
+● Update(agent.py)
+  ⎿  Added 1 line
+      152          "avec_outil": avec_outil,
+      153          "etapes": etapes,
+      154          "reponse_finale": reponse_finale,
+      155 +        "arbitre": arbitre,                                   
+      156          "tours": tours,
+      157          "duree_secondes": round(time.perf_counter() - debut, 2
+           ),
+      158      }
+
+● Write(tests\test_arbitre.py)
+  ⎿  Wrote 94 lines to tests\test_arbitre.py
+       1 # Tests de l'arbitre (arbitre.py) et de son branchement dans age
+         nt.py, sans appeler Ollama.
+       2 
+       3 import os
+       4 import sys
+       5 
+       6 # Permet d'importer arbitre.py et agent.py, qui se trouvent dans
+          le dossier parent.
+       7 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspa
+         th(__file__))))
+     … +87 lines (ctrl+o to expand)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● L'espace insécable n'a pas été écrite dans le fichier : il y a deux espaces
+  normales. Je la corrige.
+
+  Ran 1 shell command (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Crunched for 17s · done 14:16
+
+> Plutôt qu'un caractère invisible, écris l'espace insécable de façon visible   
+  avec \u00a0 dans le premier crochet de extraire_nombres : [ \u00a0,]. Ajoute  
+  un commentaire qui explique que \u00a0 est l'espace insécable, utilisée en    
+  français comme séparateur de milliers. Puis relance les tests.                
+
+● Update(arbitre.py)
+  ⎿  User rejected update to arbitre.py
+
+  Ran 1 shell command (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Brewed for 2s · done 14:17
+
+> Ta modification n'a pas marché : l'écran affiche encore [  ,] et le           
+  commentaire commence par « #   est », donc \u00a0 a été converti en caractère 
+  invisible au lieu d'être écrit tel quel. Je veux que le fichier contienne     
+  littéralement les 6 caractères \u00a0 (barre oblique inverse, u, 0, 0, a, 0). 
+  Vérifie-le ensuite avec une recherche du texte u00a0 dans arbitre.py. Si ton  
+  outil continue de le convertir, utilise plutôt une constante                  
+  ESPACE_INSECABLE = chr(160), avec un commentaire, et construis le motif avec  
+  elle. Puis relance les tests.                                                 
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Le fichier contient maintenant littéralement \u00a0 : la recherche de u00a0 le
+  trouve aux lignes 14 et 15, et il ne reste plus aucun caractère invisible.
+  J'ai écrit ces caractères avec un petit script Python, parce que mon outil
+  d'édition les transformait. Je n'ai donc pas eu besoin de ESPACE_INSECABLE = 
+  chr(160).
+
+  Les tests ne passent pas tous : 25 réussis, 3 échoués. Le problème vient de la
+  fonction extraire() du cours elle-même, pas de l'espace insécable.
+
+  Le problème
+
+  La première ligne traite la virgule comme un séparateur de milliers dès
+  qu'elle est suivie d'exactement 3 chiffres. Or « 0,568 » a justement 3
+  chiffres après la virgule :
+
+  - "0,568" devient "0568" à la ligne 1, puis 568.0 ;
+  - "0,57" donne bien 0.57, parce qu'il n'y a que 2 chiffres après la virgule.
+
+  Les 3 tests en échec sont :
+  - test_extraire_virgule_et_milliers : la fonction obtient 568 au lieu de 0.568
+    ;
+  - test_bon_resultat_autorise : 568 n'est pas autorisé, donc la bonne réponse
+    est bloquée ;
+  - test_nombre_invente_bloque : les nombres bloqués sont [568, 82] au lieu de
+    [82].
+
+  C'est grave pour l'arbitre : la vraie réponse du modèle (« 0,568 million… sur 
+  les 2304 jeux ») serait bloquée. La fonction ne fait donc pas ce que tu
+  attendais, c'est-à-dire comprendre « 0,568 ».
+
+  Correction proposée
+
+  Retirer la virgule du premier crochet, pour que seules les espaces séparent
+  les milliers : [ \u00a0] au lieu de [ \u00a0,]. En français, la virgule sert
+  aux décimales, donc c'est cohérent. La contrepartie : un nombre écrit à
+  l'anglaise comme « 2,304 » serait lu 2.304. Le modèle répond en français, donc
+  ce cas devrait être rare.
+
+  Il faudrait aussi adapter la docstring et le commentaire, qui parlent de la
+  virgule comme séparateur de milliers.
+
+  Est-ce que je fais cette correction ? Tu pourrais aussi vouloir signaler ce
+  comportement dans ton cours, puisque la fonction d'origine a le même défaut.
+
+✻ Sautéed for 23s · done 14:18
+
+> Oui, fais cette correction : [ \u00a0] sans la virgule, et mets à jour la     
+  docstring et le commentaire (la virgule sert seulement aux décimales en       
+  français). Ajoute un test qui vérifie que "0,568" donne 0.568 et un test qui  
+  documente le cas anglais : "2,304" donne 2.304. Relance tous les tests.       
+
+● Update(arbitre.py)
+  ⎿  Added 5 lines, removed 1 line
+       6  def extraire_nombres(texte):
+       7      """Renvoie la liste des nombres (float) écrits dans le text
+          e, en comprenant "0,568" et "2 304".
+       8  
+       9 -    Ligne 1 : enlève l'espace (normale ou insécable) ou la virg
+         -ule qui sépare les milliers,                                   
+       9 +    Ligne 1 : enlève l'espace (normale ou insécable) qui sépare
+         + les milliers,                                                 
+      10                par exemple "2 304" devient "2304" (un chiffre av
+          ant, exactement 3 chiffres après).
+      11      Ligne 2 : remplace la virgule décimale entre deux chiffres 
+          par un point : "0,568" devient "0.568".
+      12      Ligne 3 : trouve tous les nombres (signe moins et partie dé
+          cimale facultatifs) et les convertit en float.
+      13 +                                                               
+      14 +    En français, la virgule sert seulement aux décimales : un n
+         +ombre écrit à l'anglaise                                       
+      15 +    comme "2,304" est donc lu 2.304, et non 2304.              
+      16      """
+      17 +    # La virgule n'est pas dans le crochet : sinon "0,568" devi
+         +endrait "0568", donc 568.                                      
+      18      # \u00a0 est l'espace insécable, utilisée en français comme
+           séparateur de milliers.
+      19      t = re.sub(r"(?<=\d)[ \u00a0,](?=\d{3}(?!\d))", "", texte)
+      20      t = re.sub(r"(?<=\d),(?=\d)", ".", t)
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(tests\test_arbitre.py)
+  ⎿  Added 10 lines
+      27      assert arbitre.extraire_nombres("0,568 million sur 2 304 je
+          ux") == [0.568, 2304.0]
+      28  
+      29  
+      30 +def test_extraire_virgule_decimale():                          
+      31 +    """La virgule française est une virgule décimale : "0,568" 
+         +donne 0.568 (et non 568)."""                                   
+      32 +    assert arbitre.extraire_nombres("0,568") == [0.568]        
+      33 +                                                               
+      34 +                                                               
+      35 +def test_extraire_cas_anglais():                               
+      36 +    """Cas documenté : "2,304" écrit à l'anglaise est lu comme 
+         +le décimal 2.304, pas 2304."""                                 
+      37 +    assert arbitre.extraire_nombres("2,304") == [2.304]        
+      38 +                                                               
+      39 +                                                               
+      40  def test_extraire_espace_insecable():
+      41      """Une espace insécable entre les milliers est aussi compri
+          se."""
+      42      assert arbitre.extraire_nombres("2 304 jeux") == [2304.0]
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Tous les tests passent maintenant (30). Comme prévu dans le plan, je lance un
+  essai réel pour vérifier que la bonne réponse passe l'arbitre.
+  Ran 1 shell command (ctrl+o to expand)
+
+● J'ai corrigé l'arbitre (premier crochet [ \u00a0], sans la virgule) et les 30 
+  tests passent. Dans un essai réel avec Ollama, la bonne réponse passe
+  l'arbitre.
+
+  Ce qui a changé
+
+  - arbitre.py, ligne 19 : la virgule ne sépare plus les milliers.
+  - Commentaires (lignes 17-18) : ils expliquent pourquoi la virgule n'est plus
+    dans le crochet et ce qu'est \u00a0.
+  - Docstring : elle précise que la virgule sert seulement aux décimales et cite
+    le cas anglais (« 2,304 » est lu 2.304).
+  - Tests : 2 nouveaux tests, "0,568" donne [0.568] et "2,304" donne [2.304].
+
+  Essai réel
+
+  Appel de l'outil : {"statistique": "moyenne", "colonne": "Global_Sales", 
+  "filtre_colonne": "Genre", "filtre_valeur": "Sports"}
+  Résultat : {... "resultat": 0.568, "n": 2304}
+  Réponse finale : La moyenne des ventes mondiales des jeux de genre Sports est 
+  de 0,568 million d'exemplaires sur les 2304 jeux concernés.
+  La trace traces/trace_2026-11-03_14-23-46.json contient "arbitre": 
+  {"autorisee": true, "nombres_non_justifies": [], "reponse_modele": "..."}.
+  Avant la correction, cette même réponse aurait été bloquée, parce que « 0,568
+  » était lu 568.
+
+  Explication des fonctions
+
+  arbitre.py
+  - extraire_nombres(texte) fait trois remplacements dans l'ordre :
+    a. elle enlève l'espace des milliers (« 2 304 » devient « 2304 ») ;
+    b. elle remplace la virgule décimale par un point ;
+    c. elle récupère tous les nombres et les convertit en float.
+  - nombres_autorises(resultats_outil, question) : construit la liste des
+    nombres permis, c'est-à-dire resultat et n de chaque appel d'outil réussi,
+    plus les nombres écrits dans la question.
+  - est_justifie(nombre, autorises) : parcourt les nombres autorisés et répond
+    vrai dès que l'un d'eux est à moins de 1 % du nombre testé.
+  - verifier(reponse, resultats_outil, question) : extrait les nombres de la
+    réponse et garde ceux qui ne sont pas justifiés. La réponse est autorisée si
+    cette liste est vide.
+  - formater_nombre(nombre) : écrit 42.0 sous la forme « 42 » dans le message de
+    blocage.
+
+  agent.py
+  - appliquer_arbitre(reponse_modele, resultats_outil, question) : une nouvelle
+    fonction d'aide. Elle appelle verifier. Si la réponse est autorisée, elle la
+    renvoie telle quelle. Sinon, elle renvoie le message « Réponse bloquée par
+    l'arbitre… » avec les nombres en cause. Dans les deux cas, elle renvoie
+    aussi les informations pour la trace, y compris la réponse d'origine du
+    modèle.
+  - repondre : en mode avec outil, elle garde maintenant chaque résultat de
+    calculer dans resultats_outil et passe la réponse finale à l'arbitre. La clé
+    "arbitre" reste à None en mode sans outil, ou si le modèle n'a jamais donné
+    de réponse finale.
+  - CONSIGNE : j'y ai ajouté la phrase « N'écris aucun autre nombre que ceux
+    renvoyés par l'outil. »
+
+  tests/test_arbitre.py : 11 tests.
+  - 4 pour extraire_nombres.
+  - 6 pour verifier. Le bon résultat, l'arrondi « 0,57 », une réponse sans
+    nombre et une année venant de la question sont autorisés. L'arrondi « 0,6 »
+    et un nombre inventé sont bloqués.
+  - 1 test de triche : un faux modèle remplace le vrai avec monkeypatch et
+    répond « 42 millions » sans appeler l'outil. La réponse est bloquée, la
+    trace indique autorisee == False, et le test n'a pas besoin d'Ollama.
+
+  Je n'ai rien commité. Les fichiers modifiés ou nouveaux sont arbitre.py,
+  agent.py, tests/test_arbitre.py et la nouvelle trace
+  traces/trace_2026-11-03_14-23-46.json.
+
+✻ Cooked for 1m 40s · done 14:24
+
+※ recap: La brique 3, l'arbitre qui bloque tout nombre non calculé par l'outil, est terminée : les 30 tests passent et un essai réel avec Ollama est accepté par l'arbitre. Prochaine étape : ton accord pour commiter arbitre.py, agent.py, tests/test_arbitre.py et la nouvelle trace. (disable recaps in /config)
+
+> Parfait. Avant de commiter, une vérification : dans tests/test_arbitre.py, le 
+  test test_extraire_espace_insecable doit contenir une vraie espace            
+  insécable, écrite de façon visible avec \u00a0 dans une chaîne normale (pas   
+  raw), par exemple "2\u00a0304 jeux". Vérifie-le avec une recherche de u00a0   
+  dans le fichier, corrige si besoin avec ton astuce chr(92), et relance les    
+  tests.                                                                        
+                                                                                
+  Puis commite arbitre.py, agent.py, tests/test_arbitre.py et la nouvelle       
+  trace, avec le message « Brique 3 : arbitre qui bloque les nombres non        
+  calculés ».                                                                   
+                                                                                
+  Ensuite, remplis la section Brique 3 de EVIDENCE.md sur le même modèle que    
+  les autres :                                                                  
+  - Ce que je montre : une règle imposée par le code et non par le prompt :     
+  aucune réponse finale ne peut contenir un nombre qui n'a pas été calculé par  
+  l'outil (tolérance 1 % pour les arrondis). Toute réponse du modèle passe      
+  obligatoirement par l'arbitre (agent.py, appliquer_arbitre). Un test remplace 
+  le modèle par un faux modèle qui triche (« 42 millions » sans appel d'outil)  
+  : la réponse est bloquée.                                                     
+  - Fichiers : arbitre.py, agent.py, tests/test_arbitre.py,                     
+  traces/trace_2026-11-03_14-23-46.json (une vraie réponse autorisée par        
+  l'arbitre).                                                                   
+  - Commandes : .venv/Scripts/python -m pytest tests/test_arbitre.py (le test   
+  de triche est test_triche_bloquee) et python agent.py "Quelle est la moyenne  
+  des ventes mondiales des jeux de genre Sports ?".                             
+  - Une note « Ce que les tests ont révélé » : la fonction extraire() reprise   
+  du comparer.py du cours lisait « 0,568 » comme 568 (la virgule suivie de 3    
+  chiffres était prise pour un séparateur de milliers anglais). L'arbitre       
+  aurait bloqué les bonnes réponses. J'ai retiré la virgule du premier crochet  
+  ; un test documente le cas anglais (« 2,304 » est lu 2.304).                  
+                                                                                
+  Enfin, crée ai_log/seance_02.md :                                             
+                                                                                
+  Séance 2 — 3 novembre 2026 (après-midi)                                       
+                                                                                
+  Outils : Claude Code ; Claude (claude.ai) pour relire les plans.              
+                                                                                
+  - Brique 1, outil calculer : plan accepté avec un ajout de ma part : comparer 
+  le filtre en texte minuscule (str().lower()), parce que le modèle peut        
+  envoyer 2006 au lieu de "2006" ou "sports" au lieu de "Sports".               
+  - Brique 1, agent.py : premier essai réel réussi (0,568 sur 2304 jeux, 72 s). 
+  Sans outil, le modèle répond hors sujet (chiffre d'affaires en dollars).      
+  - Brique 3, arbitre : j'ai repris extraire() du comparer.py du cours. Mes     
+  tests ont montré qu'elle lit « 0,568 » comme 568. Corrigé à la main : virgule 
+  retirée du premier crochet, plus un test qui documente le cas anglais.        
+  - L'outil d'édition de Claude Code transformait \u00a0 en caractère invisible 
+  : j'ai exigé une écriture visible, plus facile à expliquer à l'oral.          
+                                                                                
+  Commite EVIDENCE.md et ai_log/seance_02.md avec le message « EVIDENCE brique  
+  3 et journal de la séance 2 ».                                                
+
+  Searched for 1 pattern (ctrl+o to expand)
+
+● La recherche de u00a0 ne trouve rien. La ligne 42 contient un caractère
+  insécable invisible, converti par mon outil. Je le remplace par \u00a0 écrit
+  en toutes lettres.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● La ligne 42 contient maintenant \u00a0 en toutes lettres, sans caractère
+  invisible, et les 30 tests passent. Je commite.
+
+  Read 1 file, ran 1 shell command (ctrl+o to expand)
+
+● Update(EVIDENCE.md)
+  ⎿  Added 17 lines
+      20  
+      21  ## Brique 3 — Règle imposée par le code
+      22  
+      23 +**Ce que je montre** : une règle imposée par le code et non par
+         + le prompt : aucune réponse finale ne peut contenir un nombre q
+         +ui n'a pas été calculé par l'outil (tolérance de 1 % pour les a
+         +rrondis).                                                      
+      24 +- Toute réponse du modèle passe obligatoirement par l'arbitre (
+         +`agent.py`, fonction `appliquer_arbitre`).                     
+      25 +- Un test remplace le modèle par un faux modèle qui triche (« 4
+         +2 millions » sans appel d'outil) : la réponse est bloquée.     
+      26 +                                                               
+      27 +**Fichiers** : `arbitre.py`, `agent.py`, `tests/test_arbitre.py
+         +`, `traces/trace_2026-11-03_14-23-46.json` (une vraie réponse a
+         +utorisée par l'arbitre).                                       
+      28 +                                                               
+      29 +**Commandes pour reproduire** :                                
+      30 +```                                                            
+      31 +.venv/Scripts/python -m pytest tests/test_arbitre.py           
+      32 +python agent.py "Quelle est la moyenne des ventes mondiales des
+         + jeux de genre Sports ?"                                       
+      33 +```                                                            
+      34 +Le test de triche est `test_triche_bloquee`.                   
+      35 +                                                               
+      36 +**Résultat attendu** : 11 tests passés ; la vraie réponse (0,56
+         +8 sur 2304 jeux) est autorisée, avec `"arbitre": {"autorisee": 
+         +true, ...}` dans la trace.                                     
+      37 +                                                               
+      38 +**Ce que les tests ont révélé** : la fonction `extraire()` repr
+         +ise du `comparer.py` du cours lisait « 0,568 » comme 568 (la vi
+         +rgule suivie de 3 chiffres était prise pour un séparateur de mi
+         +lliers anglais). L'arbitre aurait bloqué les bonnes réponses. J
+         +'ai retiré la virgule du premier crochet ; un test documente le
+         + cas anglais (« 2,304 » est lu 2.304).                         
+      39 +                                                               
+      40  ## Brique 6 — Données sales
+      41  
+      42  **Ce que je montre** : de vraies données ouvertes (vgsales, Zen
+          odo, CC BY 4.0) nettoyées par 6 règles écrites, avec un journal
+          .
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Tout est fait et commité, et le dépôt n'a plus aucune modification en attente.
+
+  Vérification de \u00a0. Le test ne contenait pas \u00a0 : la ligne 42 de
+  tests/test_arbitre.py avait un caractère insécable invisible. Je l'ai remplacé
+  avec l'astuce chr(92). Elle contient maintenant "2\u00a0304 jeux" dans une
+  chaîne normale, et la recherche de u00a0 la trouve. Il n'y a plus aucun
+  caractère invisible et les 30 tests passent.
+
+  Commits :
+  - c1be7ff Brique 3 : arbitre qui bloque les nombres non calculés : arbitre.py,
+    agent.py, tests/test_arbitre.py et la trace 14-23-46.
+  - 282f732 EVIDENCE brique 3 et journal de la séance 2.
+
+  EVIDENCE.md, section Brique 3. J'ai repris ton texte, sur le même modèle que
+  les autres. J'ai ajouté une ligne « Résultat attendu », comme dans les briques
+  1 et 6 : 11 tests passés, et la vraie réponse est autorisée avec "autorisee":
+  true dans la trace.
+
+  ai_log/seance_02.md. Je l'ai écrit mot pour mot. Comme le texte contient
+  \u00a0, je l'ai aussi écrit avec chr(92), et j'ai vérifié qu'il n'y a pas de
+  caractère invisible dans le fichier.
+
+  Une remarque sur le journal : « Corrigé à la main » laisse penser que tu as
+  modifié le code toi-même. En réalité, c'est toi qui as trouvé le problème et
+  choisi la correction, et c'est Claude Code qui l'a écrite à ta demande. Si
+  quelqu'un te pose la question à l'oral, « correction décidée par moi,
+  appliquée par Claude Code » serait plus exact. Je peux modifier la phrase si
+  tu veux.
+
+✻ Baked for 33s · done 14:31
+
+> Oui, corrige la phrase dans ai_log/seance_02.md : « Mes tests ont montré      
+  qu'elle lit « 0,568 » comme 568 ; Claude Code a trouvé la cause (la virgule   
+  prise pour un séparateur de milliers anglais) et proposé de retirer la        
+  virgule du premier crochet ; j'ai validé cette correction, appliquée par      
+  Claude Code, avec un test qui documente le cas anglais. » Puis commite.       
+
+● Update(ai_log\seance_02.md)
+  ⎿  Added 1 line, removed 1 line
+      4  
+      5  - Brique 1, outil calculer : plan accepté avec un ajout de ma pa
+         rt : comparer le filtre en texte minuscule (str().lower()), parc
+         e que le modèle peut envoyer 2006 au lieu de "2006" ou "sports" 
+         au lieu de "Sports".
+      6  - Brique 1, agent.py : premier essai réel réussi (0,568 sur 2304
+          jeux, 72 s). Sans outil, le modèle répond hors sujet (chiffre d
+         'affaires en dollars).
+      7 -- Brique 3, arbitre : j'ai repris extraire() du comparer.py du c
+        -ours. Mes tests ont montré qu'elle lit « 0,568 » comme 568. Corr
+        -igé à la main : virgule retirée du premier crochet, plus un test
+        - qui documente le cas anglais.                                  
+      7 +- Brique 3, arbitre : j'ai repris extraire() du comparer.py du c
+        +ours. Mes tests ont montré qu'elle lit « 0,568 » comme 568 ; Cla
+        +ude Code a trouvé la cause (la virgule prise pour un séparateur 
+        +de milliers anglais) et proposé de retirer la virgule du premier
+        + crochet ; j'ai validé cette correction, appliquée par Claude Co
+        +de, avec un test qui documente le cas anglais.                  
+      8  - L'outil d'édition de Claude Code transformait \u00a0 en caract
+         ère invisible : j'ai exigé une écriture visible, plus facile à e
+         xpliquer à l'oral.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● J'ai remplacé la phrase dans ai_log/seance_02.md par ton texte exact et je
+  l'ai commitée. Le dépôt n'a plus aucune modification en attente.
+
+  Comme je modifiais une ligne de ce fichier avec mon outil d'édition, j'ai
+  vérifié que la ligne 8 contient toujours \u00a0 écrit en toutes lettres, sans
+  caractère invisible.
+
+  Tu ne m'avais pas donné de message pour ce commit, alors je l'ai choisi :
+  28684e2 Journal séance 2 : qui a trouvé et appliqué la correction de 
+  extraire(). Je peux le changer si tu préfères un autre texte.
+
+✻ Churned for 6s · done 14:33
