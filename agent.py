@@ -17,6 +17,8 @@ NUM_CTX = 8192
 TOURS_MAX = 5
 REFLEXION = False
 TEMPERATURE = 0.2
+# Nombre maximum de jetons produits par réponse, pour éviter les textes interminables.
+NUM_PREDICT = 512
 
 # Le dossier des traces part du dossier de ce fichier.
 DOSSIER_TRACES = os.path.join(os.path.dirname(os.path.abspath(__file__)), "traces")
@@ -40,7 +42,7 @@ def appeler_modele(messages, avec_outil):
         "messages": messages,
         "stream": False,
         "think": REFLEXION,
-        "options": {"num_ctx": NUM_CTX, "temperature": TEMPERATURE},
+        "options": {"num_ctx": NUM_CTX, "temperature": TEMPERATURE, "num_predict": NUM_PREDICT},
     }
     if avec_outil:
         requete["tools"] = [DESCRIPTION_OUTIL]
