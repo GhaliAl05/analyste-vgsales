@@ -1,0 +1,700 @@
+ ▐▛███▛█   Claude Code v2.1.317
+▝▜██████▀  Opus 5.5 · Claude Pro
+ ▝▝   ▝▝   ~\Desktop\analyste-vgsales
+
+‼ Your login expires in 1 day · run /login to renew
+
+> Nouvelle étape : brique 8 (des chiffres avec leur incertitude). On ajoute un  
+  intervalle de confiance à 95 % de la moyenne.                                 
+                                                                                
+  1. stats.py : ajoute intervalle_confiance_95(xs) qui renvoie (borne_basse,    
+  borne_haute) avec la formule moyenne ± 1.96 × ecart_type / racine(n), en      
+  réutilisant moyenne et ecart_type (racine avec ** 0.5, comme dans             
+  ecart_type). Docstring en français qui explique 1.96 (niveau 95 %, loi        
+  normale) et pourquoi on divise par racine(n).                                 
+  2. outil.py : ajoute une 6e statistique "intervalle_confiance" dans           
+  STATISTIQUES.                                                                 
+  - Elle exige au moins 30 jeux ; sinon, erreur claire (« trop peu de jeux pour 
+  un intervalle fiable, il en faut au moins 30 »).                              
+  - Le résultat contient en plus : "borne_basse", "borne_haute" (arrondies à 3  
+  décimales) et "niveau": 95 ; "resultat" contient la moyenne.                  
+  - Mets à jour la description de l'outil pour que le modèle sache quand        
+  l'utiliser (questions sur l'incertitude, la marge d'erreur ou un intervalle). 
+                                                                                
+  3. arbitre.py : nombres_autorises doit autoriser toutes les valeurs           
+  numériques de chaque résultat d'outil sans erreur (resultat, n, borne_basse,  
+  borne_haute, niveau), au lieu de seulement resultat et n. Une boucle simple   
+  sur les valeurs du dictionnaire, en ignorant les textes.                      
+  4. agent.py : ajoute à la CONSIGNE : si la question porte sur l'incertitude,  
+  une marge d'erreur ou un intervalle, utilise la statistique                   
+  intervalle_confiance et donne les deux bornes.                                
+  5. Tests :                                                                    
+  - tests/test_outil.py : intervalle_confiance_95 sur list(range(1, 41)),       
+  comparé à un calcul indépendant avec statistics.mean, statistics.stdev et     
+  math.sqrt ; calculer("intervalle_confiance", "Global_Sales", "Genre",         
+  "Sports") comparé au même calcul indépendant sur les vraies données ; une     
+  erreur quand le filtre donne moins de 30 jeux.                                
+  - tests/test_arbitre.py : une réponse qui cite les deux bornes et « 95 % »    
+  est autorisée ; une réponse avec une borne inventée est bloquée.              
+                                                                                
+  Respecte CLAUDE.md. Explique-moi d'abord ton plan et attends mon accord.      
+
+● Je lis d'abord les fichiers concernés pour bâtir un plan précis.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● Voici mon plan. Il touche 6 fichiers, donc j'attends ton accord avant d'écrire
+  quoi que ce soit.
+
+  Plan — brique 8 : intervalle de confiance à 95 %
+
+  1. stats.py : j'ajoute intervalle_confiance_95(xs).
+  - m = moyenne(xs), marge = 1.96 * ecart_type(xs) / len(xs) ** 0.5, puis return
+    (m - marge, m + marge).
+  - La docstring explique deux choses. D'abord, 1.96 vient de la loi normale :
+    95 % des valeurs sont à moins de 1.96 écart-type du centre. Ensuite, on
+    divise par racine(n) parce que la moyenne de n jeux varie moins qu'un jeu
+    pris seul, et sa dispersion vaut écart-type / racine(n).
+
+  2. outil.py
+  - J'ajoute "intervalle_confiance" à STATISTIQUES, ce qui ajoute aussi la
+    valeur à l'enum de la description.
+  - J'ajoute un contrôle à côté de celui de l'écart-type : si len(lignes) < 30,
+    la fonction renvoie l'erreur « Trop peu de jeux pour un intervalle fiable,
+    il en faut au moins 30 (filtre … : N jeux). »
+  - Dans calculer, je construis le dictionnaire habituel. Si la statistique est
+    intervalle_confiance, j'y ajoute borne_basse, borne_haute (arrondies à 3
+    décimales) et "niveau": 95, et resultat reçoit la moyenne.
+    appliquer_statistique renvoie la moyenne pour ce cas.
+  - La description de l'outil précise quand utiliser cette statistique :
+    questions sur l'incertitude, la marge d'erreur ou un intervalle.
+
+  3. arbitre.py : dans nombres_autorises, je remplace les deux append par une
+  boucle simple sur resultat.values(). Elle garde les valeurs qui sont des int
+  ou des float et ignore les textes (statistique, colonne, filtre). Je mets la
+  docstring à jour.
+
+  4. agent.py : j'ajoute une phrase à la CONSIGNE : « Si la question porte sur
+  l'incertitude, une marge d'erreur ou un intervalle, utilise la statistique
+  intervalle_confiance et donne les deux bornes. »
+
+  5. Tests
+  - tests/test_outil.py, trois tests :
+    - intervalle_confiance_95(list(range(1, 41))) comparé au même calcul fait
+      avec statistics.mean, statistics.stdev et math.sqrt (j'ajoute import 
+      math).
+    - calculer("intervalle_confiance", "Global_Sales", "Genre", "Sports")
+      comparé au calcul indépendant fait sur lire_csv_independant(), pour les
+      bornes, la moyenne, n et niveau.
+    - Un filtre qui donne entre 1 et 29 jeux renvoie bien une "erreur". Je
+      vérifierai dans les données une valeur sûre, probablement une année
+      ancienne comme Year = 1980.
+  - tests/test_arbitre.py, deux tests construits sur un résultat d'intervalle
+    pour Sports :
+    - Une réponse qui cite les deux bornes et « 95 % » est autorisée.
+    - Une réponse avec une borne inventée est bloquée.
+
+  Deux points à noter
+  - Si le modèle écrit « 1,96 » dans sa réponse, l'arbitre la bloquera, parce
+    que ce nombre ne vient pas de l'outil. Je trouve ça cohérent avec la règle
+    actuelle, donc je ne change rien.
+  - La tolérance de 1 % de l'arbitre reste en place. Je choisirai une borne
+    inventée assez éloignée des vraies valeurs pour que le test soit net.
+
+  Après chaque fonction, je t'expliquerai en quelques phrases ce qu'elle fait,
+  puis je lancerai pytest. Tu es d'accord avec ce plan ?
+
+✻ Cooked for 28s · done 15:00
+
+> D'accord, tu peux y aller. Après les tests, lance un essai réel avec cette    
+  question : « Quel est l'intervalle de confiance à 95 % de la moyenne des      
+  ventes mondiales des jeux de genre Sports ? ». Montre-moi l'appel d'outil, la 
+  réponse finale et le verdict de l'arbitre. Ne commite rien.                   
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Je commence par stats.py.
+
+● Update(stats.py)
+  ⎿  Added 14 lines
+      19      """Renvoie l'écart-type « échantillon » de xs (division par
+           n - 1). Demande au moins 2 valeurs."""
+      20      m = moyenne(xs)
+      21      return (sum((x - m) ** 2 for x in xs) / (len(xs) - 1)) ** 0
+          .5
+      22 +                                                               
+      23 +                                                               
+      24 +def intervalle_confiance_95(xs):                               
+      25 +    """Renvoie (borne_basse, borne_haute), l'intervalle de conf
+         +iance à 95 % de la moyenne de xs.                              
+      26 +                                                               
+      27 +    Formule : moyenne ± 1.96 × écart-type / racine(n).         
+      28 +    1.96 vient de la loi normale : 95 % des valeurs tombent à m
+         +oins de 1.96 écart-type                                        
+      29 +    du centre. C'est ce qui donne le niveau de 95 %.           
+      30 +    On divise par racine(n) car la moyenne de n valeurs varie m
+         +oins qu'une valeur seule :                                     
+      31 +    sa dispersion vaut écart-type / racine(n). Plus il y a de j
+         +eux, plus l'intervalle est étroit.                             
+      32 +    """                                                        
+      33 +    m = moyenne(xs)                                            
+      34 +    marge = 1.96 * ecart_type(xs) / len(xs) ** 0.5             
+      35 +    return (m - marge, m + marge)                              
+
+● Update(stats.py)
+  ⎿  Added 1 line, removed 1 line
+      1 -# Fonctions de statistiques simples (somme, moyenne, médiane, in
+        -tervalles) sur les données nettoyées.                           
+      1 +# Fonctions de statistiques simples (somme, moyenne, médiane, éc
+        +art-type, intervalle de confiance) sur les données nettoyées.   
+      2  
+      3  
+      4  def moyenne(xs):
+
+● Elle calcule l'intervalle de confiance à 95 % comme moyenne ± 1,96 ×
+  écart-type / √n, en réutilisant moyenne et ecart_type. Je passe ensuite à
+  outil.py.
+
+● Update(outil.py)
+  ⎿  Added 4 lines, removed 1 line
+      10  CHEMIN_PROPRE = os.path.join(DOSSIER_DONNEES, "vgsales_propre.c
+          sv")
+      11  
+      12  # Les valeurs acceptées par l'outil.
+      13 -STATISTIQUES = ["nombre", "somme", "moyenne", "mediane", "ecart
+         -_type"]                                                        
+      13 +STATISTIQUES = ["nombre", "somme", "moyenne", "mediane", "ecart
+         +_type", "intervalle_confiance"]                                
+      14 +                                                               
+      15 +# En dessous de ce nombre de jeux, l'intervalle de confiance n'
+         +est pas fiable.                                                
+      16 +MINIMUM_INTERVALLE = 30                                        
+      17  COLONNES_VENTES = ["Global_Sales", "NA_Sales", "EU_Sales", "JP_
+          Sales", "Other_Sales"]
+      18  COLONNES_FILTRE = ["Genre", "Platform", "Publisher", "Year"]
+      19  
+
+● Update(outil.py)
+  ⎿  Added 3 lines
+      48          return stats.moyenne(valeurs)
+      49      if statistique == "mediane":
+      50          return stats.mediane(valeurs)
+      51 +    if statistique == "intervalle_confiance":                  
+      52 +        # Le résultat principal d'un intervalle est la moyenne 
+         +; les bornes sont ajoutées dans calculer.                      
+      53 +        return stats.moyenne(valeurs)                          
+      54      return stats.ecart_type(valeurs)
+      55  
+      56  
+
+● Update(outil.py)
+  ⎿  Added 11 lines, removed 1 line
+       84      if statistique == "ecart_type" and len(lignes) < 2:
+       85          return {"erreur": "L'écart-type demande au moins 2 jeu
+           x, or un seul jeu correspond au filtre "
+       86                  + texte_filtre + "."}
+       87 +    if statistique == "intervalle_confiance" and len(lignes) <
+          + MINIMUM_INTERVALLE:                                          
+       88 +        return {"erreur": "Trop peu de jeux pour un intervalle
+          + fiable, il en faut au moins "                                
+       89 +                + str(MINIMUM_INTERVALLE) + " ; le filtre " + 
+          +texte_filtre + " n'en donne que "                             
+       90 +                + str(len(lignes)) + "."}                     
+       91  
+       92      valeurs = []
+       93      for ligne in lignes:
+       94          valeurs.append(ligne[colonne])
+       95  
+       92 -    return {                                                  
+       96 +    resultat = {                                              
+       97          "statistique": statistique,
+       98          "colonne": colonne,
+       99          "filtre": texte_filtre,
+      100          "resultat": round(appliquer_statistique(statistique, v
+           aleurs), 3),
+      101          "n": len(valeurs),
+      102      }
+      103 +    if statistique == "intervalle_confiance":                 
+      104 +        borne_basse, borne_haute = stats.intervalle_confiance_
+          +95(valeurs)                                                   
+      105 +        resultat["borne_basse"] = round(borne_basse, 3)       
+      106 +        resultat["borne_haute"] = round(borne_haute, 3)       
+      107 +        resultat["niveau"] = 95                               
+      108 +    return resultat                                           
+      109  
+      110  
+      111  # Description de l'outil au format « tools » d'Ollama (servira
+            à l'étape suivante).
+
+● Update(outil.py)
+  ⎿  Added 4 lines, removed 1 line
+      114      "function": {
+      115          "name": "calculer",
+      116          "description": "Calcule une statistique sur les ventes
+            de jeux vidéo (en millions d'exemplaires), "
+      117 -                       "sur tous les jeux ou sur ceux qui corr
+          -espondent à un filtre.",                                      
+      117 +                       "sur tous les jeux ou sur ceux qui corr
+          +espondent à un filtre. "                                      
+      118 +                       "Pour une question sur l'incertitude, l
+          +a marge d'erreur ou un intervalle, "                          
+      119 +                       "utilise la statistique intervalle_conf
+          +iance : elle renvoie la moyenne "                             
+      120 +                       "et les bornes de son intervalle de con
+          +fiance à 95 % (au moins 30 jeux).",                           
+      121          "parameters": {
+      122              "type": "object",
+      123              "properties": {
+
+● Update(outil.py)
+  ⎿  Added 2 lines, removed 1 line
+      124                  "statistique": {
+      125                      "type": "string",
+      126                      "enum": STATISTIQUES,
+      127 -                    "description": "La statistique à calculer.
+          -",                                                            
+      127 +                    "description": "La statistique à calculer.
+          + intervalle_confiance donne "                                 
+      128 +                                   "la moyenne avec sa marge d
+          +'erreur à 95 %.",                                             
+      129                  },
+      130                  "colonne": {
+      131                      "type": "string",
+
+● calculer gère maintenant les intervalles sur moins de 30 jeux par une erreur
+  claire, et renvoie la moyenne ainsi que les bornes arrondies et le niveau de
+  95. Je passe à arbitre.py ensuite.
+
+● Update(arbitre.py)
+  ⎿  Added 6 lines, removed 4 lines
+      22  
+      23  
+      24  def nombres_autorises(resultats_outil, question):
+      25 -    """Renvoie les nombres que la réponse a le droit de citer :
+         - "resultat" et "n" de chaque                                   
+      26 -    résultat d'outil sans erreur, plus les nombres présents dan
+         -s la question."""                                              
+      25 +    """Renvoie les nombres que la réponse a le droit de citer :
+         + toutes les valeurs numériques                                 
+      26 +    de chaque résultat d'outil sans erreur (resultat, n, borne_
+         +basse, borne_haute, niveau),                                   
+      27 +    plus les nombres présents dans la question. Les textes (sta
+         +tistique, colonne, filtre) sont ignorés."""                    
+      28      autorises = []
+      29      for resultat in resultats_outil:
+      30          if "erreur" not in resultat:
+      30 -            autorises.append(resultat["resultat"])             
+      31 -            autorises.append(resultat["n"])                    
+      31 +            for valeur in resultat.values():                   
+      32 +                if isinstance(valeur, (int, float)):           
+      33 +                    autorises.append(valeur)                   
+      34      for nombre in extraire_nombres(question):
+      35          autorises.append(nombre)
+      36      return autorises
+
+● Update(agent.py)
+  ⎿  Added 2 lines
+      27      "Tu dois TOUJOURS utiliser l'outil calculer, jamais répondr
+          e de mémoire. "
+      28      "Quand tu as le résultat, réponds en une phrase en reprenan
+          t le nombre exact "
+      29      "renvoyé par l'outil et le nombre de jeux utilisés. "
+      30 +    "Si la question porte sur l'incertitude, une marge d'erreur
+         + ou un intervalle, "                                           
+      31 +    "utilise la statistique intervalle_confiance et donne les d
+         +eux bornes. "                                                  
+      32      "N'écris aucun autre nombre que ceux renvoyés par l'outil."
+      33  )
+      34  
+
+● Dans nombres_autorises, la fonction retient désormais toutes les valeurs
+  numériques du dictionnaire de l'outil, et agent.py reçoit une phrase de plus
+  dans sa consigne. Je lis maintenant la fin des fichiers de tests pour y
+  ajouter les nouveaux cas.
+
+  Read 2 files (ctrl+o to expand)
+
+● Il me faut les vraies bornes pour Sports, que j'utiliserai dans le test de
+  l'arbitre.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Update(tests\test_outil.py)
+  ⎿  Added 1 line
+      1  # Tests de stats.py et de l'outil calculer (outil.py), sans appe
+         ler le modèle.
+      2  
+      3  import csv
+      4 +import math                                                     
+      5  import os
+      6  import statistics
+      7  import sys
+
+● Update(tests\test_outil.py)
+  ⎿  Added 40 lines
+      116  def test_ecart_type_un_seul_jeu():
+      117      """L'écart-type sur un seul jeu (seul jeu de l'éditeur Val
+           ve) renvoie une erreur."""
+      118      assert "erreur" in outil.calculer("ecart_type", "Global_Sa
+           les", "Publisher", "Valve")
+      119 +                                                              
+      120 +                                                              
+      121 +# --- Intervalle de confiance à 95 % ---                      
+      122 +                                                              
+      123 +def intervalle_independant(xs):                               
+      124 +    """Calcule l'intervalle à 95 % avec statistics et math, sa
+          +ns passer par stats.py."""                                    
+      125 +    m = statistics.mean(xs)                                   
+      126 +    marge = 1.96 * statistics.stdev(xs) / math.sqrt(len(xs))  
+      127 +    return (m - marge, m + marge)                             
+      128 +                                                              
+      129 +                                                              
+      130 +def test_intervalle_confiance_95():                           
+      131 +    """Sur les nombres de 1 à 40, les bornes correspondent au 
+          +calcul indépendant."""                                        
+      132 +    xs = list(range(1, 41))                                   
+      133 +    borne_basse, borne_haute = stats.intervalle_confiance_95(x
+          +s)                                                            
+      134 +    attendu_basse, attendu_haute = intervalle_independant(xs) 
+      135 +    assert abs(borne_basse - attendu_basse) < 1e-9            
+      136 +    assert abs(borne_haute - attendu_haute) < 1e-9            
+      137 +                                                              
+      138 +                                                              
+      139 +def test_intervalle_confiance_sports():                       
+      140 +    """L'intervalle des ventes mondiales des jeux Sports corre
+          +spond au calcul indépendant."""                               
+      141 +    ventes = []                                               
+      142 +    for ligne in lire_csv_independant():                      
+      143 +        if ligne["Genre"] == "Sports":                        
+      144 +            ventes.append(float(ligne["Global_Sales"]))       
+      145 +    attendu_basse, attendu_haute = intervalle_independant(vent
+          +es)                                                           
+      146 +    reponse = outil.calculer("intervalle_confiance", "Global_S
+          +ales", "Genre", "Sports")                                     
+      147 +    assert reponse["borne_basse"] == round(attendu_basse, 3)  
+      148 +    assert reponse["borne_haute"] == round(attendu_haute, 3)  
+      149 +    assert reponse["resultat"] == round(statistics.mean(ventes
+          +), 3)                                                         
+      150 +    assert reponse["n"] == len(ventes)                        
+      151 +    assert reponse["niveau"] == 95                            
+      152 +                                                              
+      153 +                                                              
+      154 +def test_intervalle_trop_peu_de_jeux():                       
+      155 +    """Moins de 30 jeux (9 jeux sortis en 1980) : l'intervalle
+          + renvoie une erreur."""                                       
+      156 +    reponse = outil.calculer("intervalle_confiance", "Global_S
+          +ales", "Year", "1980")                                        
+      157 +    assert "erreur" in reponse                                
+      158 +    assert "au moins 30" in reponse["erreur"]                 
+
+● Update(tests\test_arbitre.py)
+  ⎿  Added 31 lines
+       87      assert arbitre.verifier(reponse, [resultat], question)["au
+           torisee"] is True
+       88  
+       89  
+       90 +# --- Intervalle de confiance : les bornes et le niveau sont d
+          +es nombres autorisés ---                                      
+       91 +                                                              
+       92 +# Le vrai résultat de l'outil pour l'intervalle de confiance d
+          +es jeux Sports.                                               
+       93 +INTERVALLE_SPORTS = {                                         
+       94 +    "statistique": "intervalle_confiance",                    
+       95 +    "colonne": "Global_Sales",                                
+       96 +    "filtre": "Genre = Sports",                               
+       97 +    "resultat": 0.568,                                        
+       98 +    "n": 2304,                                                
+       99 +    "borne_basse": 0.482,                                     
+      100 +    "borne_haute": 0.654,                                     
+      101 +    "niveau": 95,                                             
+      102 +}                                                             
+      103 +QUESTION_INTERVALLE = "Quelle est la marge d'erreur sur la moy
+          +enne des ventes des jeux Sports ?"                            
+      104 +                                                              
+      105 +                                                              
+      106 +def test_intervalle_bornes_autorisees():                      
+      107 +    """La réponse qui cite les deux bornes et « 95 % » est aut
+          +orisée."""                                                    
+      108 +    reponse = ("Avec 95 % de confiance, la moyenne est entre 0
+          +,482 et 0,654 million "                                       
+      109 +               "d'exemplaires (moyenne 0,568 sur 2304 jeux).")
+      110 +    assert arbitre.verifier(reponse, [INTERVALLE_SPORTS], QUES
+          +TION_INTERVALLE)["autorisee"] is True                         
+      111 +                                                              
+      112 +                                                              
+      113 +def test_intervalle_borne_inventee_bloquee():                 
+      114 +    """Une borne haute inventée (0,75 au lieu de 0,654) est bl
+          +oquée."""                                                     
+      115 +    reponse = "Avec 95 % de confiance, la moyenne est entre 0,
+          +482 et 0,75 million d'exemplaires."                           
+      116 +    verdict = arbitre.verifier(reponse, [INTERVALLE_SPORTS], Q
+          +UESTION_INTERVALLE)                                           
+      117 +    assert verdict["autorisee"] is False                      
+      118 +    assert verdict["nombres_non_justifies"] == [0.75]         
+      119 +                                                              
+      120 +                                                              
+      121  # --- Test de triche : un faux modèle qui invente un nombre sa
+           ns appeler l'outil ---
+      122  
+      123  def faux_modele(messages, avec_outil):
+  Ran 2 shell commands (ctrl+o to expand)
+  ⎿  Interrupted · What should Claude do instead?
+
+✻ Churned for 45s · done 15:06
+
+> Pytest est installé dans le .venv du projet. Utilise toujours                 
+  .venv\Scripts\python -m pytest -q pour lancer les tests, et                   
+  .venv\Scripts\python pour lancer agent.py. Ajoute aussi cette règle dans      
+  CLAUDE.md pour les prochaines sessions.                                       
+
+● Update(CLAUDE.md)
+  ⎿  Added 5 lines
+      17  ## Sécurité
+      18  - Ne jamais écrire de clé d'API, de mot de passe ou de donnée p
+          ersonnelle dans un fichier du dépôt.
+      19  
+      20 +## Environnement Python                                        
+      21 +- Toujours utiliser le Python du .venv du projet (pytest y est 
+         +installé).                                                     
+      22 +- Tests : `.venv\Scripts\python -m pytest -q`                  
+      23 +- Agent : `.venv\Scripts\python agent.py "ma question"`        
+      24 +                                                               
+      25  ## Méthode de travail
+      26  - Avant de modifier plusieurs fichiers, explique-moi ton plan e
+          t attends mon accord.
+      27  - Après chaque fonction écrite, explique-la-moi en quelques phr
+          ases simples.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Les 35 tests passent. Je lance l'essai réel.
+
+  Ran 2 shell commands (ctrl+o to expand)
+
+● La brique 8 est en place : les 35 tests passent et l'essai réel donne une
+  réponse autorisée par l'arbitre. Je n'ai rien commité.
+
+  L'essai réel
+
+  Appel d'outil. Le modèle a choisi la bonne statistique dès le premier tour :
+  {"statistique": "intervalle_confiance", "colonne": "Global_Sales", 
+  "filtre_colonne": "Genre", "filtre_valeur": "Sports"}
+  → resultat 0.568, n 2304, borne_basse 0.482, borne_haute 0.654, niveau 95
+
+  Réponse finale :
+
+  ▎ L'intervalle de confiance à 95 % de la moyenne des ventes mondiales des jeux
+  ▎ de genre Sports s'étend de 0,482 à 0,654 million d'exemplaires sur 2304 
+  ▎ jeux.
+
+  Verdict de l'arbitre : "autorisee": true, "nombres_non_justifies": []. Chaque
+  nombre de la réponse vient du résultat de l'outil : 95 est le niveau, 0,482 et
+  0,654 sont les bornes, 2304 est le nombre de jeux. Avant cette brique,
+  l'arbitre aurait bloqué cette réponse, car il n'autorisait que resultat et n.
+
+  La trace est dans traces\trace_2026-11-03_15-09-45.json.
+
+  Les fonctions ajoutées dans les tests
+
+  Je t'ai expliqué au fil de l'eau intervalle_confiance_95, les changements de
+  calculer et nombres_autorises. Voici celles des tests :
+  - intervalle_independant (test_outil.py) refait le calcul avec
+    statistics.mean, statistics.stdev et math.sqrt. C'est le calcul de contrôle,
+    qui ne passe pas par stats.py.
+  - test_intervalle_confiance_95 compare les deux calculs sur les nombres de 1
+    à 40.
+  - test_intervalle_confiance_sports fait la même comparaison sur les vrais jeux
+    Sports, relus directement dans le CSV, et vérifie aussi la moyenne, n et le
+    niveau.
+  - test_intervalle_trop_peu_de_jeux utilise l'année 1980, qui n'a que 9 jeux.
+    Il vérifie que l'outil renvoie l'erreur « au moins 30 ».
+  - test_intervalle_bornes_autorisees et test_intervalle_borne_inventee_bloquee
+    (test_arbitre.py) vérifient deux cas : une réponse qui cite les vraies
+    bornes passe, et une borne haute inventée de 0,75 est bloquée. 0,75 est loin
+    de toutes les valeurs autorisées, donc la tolérance de 1 % ne peut pas la
+    laisser passer.
+
+  CLAUDE.md
+
+  J'ai ajouté une section « Environnement Python » : les tests se lancent avec
+  .venv\Scripts\python -m pytest -q, et l'agent avec .venv\Scripts\python 
+  agent.py "ma question".
+
+  Fichiers modifiés : stats.py, outil.py, arbitre.py, agent.py,
+  tests/test_outil.py, tests/test_arbitre.py, CLAUDE.md, plus le nouveau fichier
+  de trace.
+
+✻ Worked for 2m 4s · done 15:11
+
+> Parfait. Commite stats.py, outil.py, arbitre.py, agent.py,                    
+  tests/test_outil.py, tests/test_arbitre.py, CLAUDE.md et la nouvelle trace,   
+  avec le message « Brique 8 : intervalle de confiance à 95 % ».                
+                                                                                
+  Puis calcule avec mon outil la médiane de Global_Sales pour Genre = Sports    
+  (calculer("mediane", "Global_Sales", "Genre", "Sports")) et vérifie dans      
+  vgsales_propre.csv quel est le jeu Sports le plus vendu et ses ventes.        
+  Montre-moi les deux résultats.                                                
+                                                                                
+  Ensuite, remplis la section Brique 8 de EVIDENCE.md sur le même modèle que    
+  les autres :                                                                  
+  - Ce que je montre : un intervalle de confiance à 95 % de la moyenne (moyenne 
+  ± 1,96 × écart-type / racine(n), au moins 30 jeux), intégré à l'outil ; le    
+  modèle l'utilise de lui-même et l'arbitre autorise les bornes et le           
+  niveau 95. Résultat réel : moyenne des ventes Sports 0,568 million,           
+  intervalle [0,482 ; 0,654] sur 2304 jeux.                                     
+  - Fichiers : stats.py, outil.py, arbitre.py, tests/test_outil.py,             
+  tests/test_arbitre.py, traces/trace_2026-11-03_15-09-45.json.                 
+  - Commandes : .venv\Scripts\python -m pytest -q et .venv\Scripts\python       
+  agent.py "Quel est l'intervalle de confiance à 95 % de la moyenne des ventes  
+  mondiales des jeux de genre Sports ?".                                        
+  - Une section « Ce que ces données ne permettent pas de conclure », en 3      
+  points courts :                                                               
+    1. L'intervalle suppose un échantillon tiré au hasard ; or le fichier ne    
+  contient que les jeux recensés par VGChartz (avec un seuil annoncé de 100 000 
+  exemplaires qui n'est pas respecté). Il mesure la variabilité statistique,    
+  pas les biais de collecte, et ne dit rien des jeux absents du fichier.        
+    2. La moyenne n'est pas le jeu typique : les ventes sont très inégales      
+  (cite le jeu Sports le plus vendu et ses ventes, et la médiane calculée, en   
+  les comparant à la moyenne de 0,568).                                         
+    3. Ces chiffres décrivent une association, pas une cause : ils ne montrent  
+  pas que le genre Sports fait vendre davantage.                                
+                                                                                
+  Enfin, crée ai_log/seance_03.md :                                             
+                                                                                
+  Séance 3 — 3 novembre 2026 (fin d'après-midi)                                 
+                                                                                
+  Outils : Claude Code ; Claude (claude.ai) pour relire les plans.              
+                                                                                
+  - Brique 8 : intervalle de confiance ajouté comme 6e statistique de l'outil,  
+  avec un minimum de 30 jeux.                                                   
+  - Piège anticipé sur le conseil de Claude (claude.ai) : l'arbitre aurait      
+  bloqué « 95 % ». L'outil renvoie donc "niveau": 95, et l'arbitre autorise     
+  désormais toutes les valeurs numériques renvoyées par l'outil.                
+  - Nouvelle session : Claude Code ne trouvait plus pytest (Python global).     
+  J'ai fait ajouter la règle du .venv dans CLAUDE.md.                           
+  - Essai réel : le modèle a choisi intervalle_confiance du premier coup ;      
+  réponse autorisée par l'arbitre.                                              
+  - Limites rédigées dans EVIDENCE : échantillon non aléatoire, moyenne tirée   
+  par quelques gros succès, pas de causalité.                                   
+                                                                                
+  Commite EVIDENCE.md et ai_log/seance_03.md avec le message « EVIDENCE brique  
+  8 et journal de la séance 3 ».                                                
+
+  Committed f76673e, ran 1 shell command (ctrl+o to expand)
+  ⎿  PostToolUse:PowerShell says: Tip: Run /ultrareview before you push to catch
+     bugs with a cloud-based multi-agent review — 3 free reviews left.
+
+● Commit fait. Je passe aux deux calculs : la médiane avec l'outil, et le jeu
+  Sports le plus vendu lu dans le CSV.
+
+  Ran 1 shell command (ctrl+o to expand)
+
+● Médiane : 0,22 million. Jeu le plus vendu : Wii Sports, 82,74 millions. Je lis
+  EVIDENCE.md pour reprendre son modèle.
+
+  Read 1 file (ctrl+o to expand)
+
+● Update(EVIDENCE.md)
+  ⎿  Added 20 lines
+      55  
+      56  ## Brique 8 — Incertitude
+      57  
+      58 +**Ce que je montre** : un intervalle de confiance à 95 % de la 
+         +moyenne (moyenne ± 1,96 × écart-type / racine(n), au moins 30 j
+         +eux), intégré à l'outil comme 6e statistique.                  
+      59 +- Le modèle choisit de lui-même la statistique `intervalle_conf
+         +iance` quand la question porte sur un intervalle.              
+      60 +- L'arbitre autorise les bornes et le niveau 95, car ce sont de
+         +s valeurs renvoyées par l'outil.                               
+      61 +- Résultat réel : moyenne des ventes Sports 0,568 million, inte
+         +rvalle [0,482 ; 0,654] sur 2304 jeux.                          
+      62 +                                                               
+      63 +**Fichiers** : `stats.py`, `outil.py`, `arbitre.py`, `tests/tes
+         +t_outil.py`, `tests/test_arbitre.py`, `traces/trace_2026-11-03_
+         +15-09-45.json`.                                                
+      64 +                                                               
+      65 +**Commandes pour reproduire** :                                
+      66 +```                                                            
+      67 +.venv\Scripts\python -m pytest -q                              
+      68 +.venv\Scripts\python agent.py "Quel est l'intervalle de confian
+         +ce à 95 % de la moyenne des ventes mondiales des jeux de genre 
+         +Sports ?"                                                      
+      69 +```                                                            
+      70 +                                                               
+      71 +**Résultat attendu** : 35 tests passés ; appel de `calculer("in
+         +tervalle_confiance", "Global_Sales", "Genre", "Sports")`, borne
+         +s 0.482 et 0.654 reprises dans la réponse finale, avec `"arbitr
+         +e": {"autorisee": true, ...}` dans la trace.                   
+      72 +                                                               
+      73 +**Ce que ces données ne permettent pas de conclure** :         
+      74 +1. L'intervalle suppose un échantillon tiré au hasard ; or le f
+         +ichier ne contient que les jeux recensés par VGChartz (avec un 
+         +seuil annoncé de 100 000 exemplaires qui n'est pas respecté). I
+         +l mesure la variabilité statistique, pas les biais de collecte,
+         + et ne dit rien des jeux absents du fichier.                   
+      75 +2. La moyenne n'est pas le jeu typique : les ventes sont très i
+         +négales. Le jeu Sports le plus vendu, Wii Sports (Wii, 2006), a
+         +tteint 82,74 millions, alors que la médiane des jeux Sports n'e
+         +st que de 0,22 million : la moitié des jeux vendent moins de 0,
+         +22 million, bien en dessous de la moyenne de 0,568 tirée vers l
+         +e haut par quelques gros succès.                               
+      76 +3. Ces chiffres décrivent une association, pas une cause : ils 
+         +ne montrent pas que le genre Sports fait vendre davantage.     
+      77 +                                                               
+      78  ## Brique 9 — Comparaison mesurée
+
+● Write(ai_log\seance_03.md)
+  ⎿  Wrote 9 lines to ai_log\seance_03.md
+      1 # Séance 3 — 3 novembre 2026 (fin d'après-midi)
+      2 
+      3 Outils : Claude Code ; Claude (claude.ai) pour relire les plans.
+      4 
+      5 - Brique 8 : intervalle de confiance ajouté comme 6e statistique 
+        de l'outil, avec un minimum de 30 jeux.
+      6 - Piège anticipé sur le conseil de Claude (claude.ai) : l'arbitre
+         aurait bloqué « 95 % ». L'outil renvoie donc "niveau": 95, et l'
+        arbitre autorise désormais toutes les valeurs numériques renvoyée
+        s par l'outil.
+     … +3 lines (ctrl+o to expand)
+
+  Committed 59e470b (ctrl+o to expand)
+
+● J'ai fait les deux commits sur master, rempli la section Brique 8 de
+  EVIDENCE.md et créé ai_log/seance_03.md. Il ne reste aucun fichier modifié.
+
+  Les deux résultats
+
+  Médiane avec ton outil : calculer("mediane", "Global_Sales", "Genre", 
+  "Sports") renvoie :
+  {'statistique': 'mediane', 'colonne': 'Global_Sales', 'filtre': 'Genre = 
+  Sports', 'resultat': 0.22, 'n': 2304}
+
+  Jeu Sports le plus vendu (lu directement dans vgsales_propre.csv) : Wii 
+  Sports, sur Wii en 2006, édité par Nintendo, avec 82,74 millions
+  d'exemplaires.
+
+  La moyenne (0,568) est donc environ 2,6 fois plus grande que la médiane
+  (0,22). La moitié des jeux Sports vendent moins de 0,22 million, et quelques
+  gros succès comme Wii Sports tirent la moyenne vers le haut.
+
+  EVIDENCE.md, section Brique 8
+
+  Elle suit le modèle des autres briques : « Ce que je montre », les fichiers,
+  les deux commandes, puis le résultat attendu (35 tests passés, bornes 0.482 et
+  0.654, arbitre qui autorise la réponse). Elle se termine par les 3 limites
+  demandées. La deuxième cite Wii Sports et ses 82,74 millions, ainsi que la
+  médiane de 0,22 comparée à la moyenne de 0,568.
+
+  Commits
+
+  - f76673e « Brique 8 : intervalle de confiance à 95 % » : les 7 fichiers et la
+    trace traces/trace_2026-11-03_15-09-45.json.
+  - 59e470b « EVIDENCE brique 8 et journal de la séance 3 » : EVIDENCE.md et
+    ai_log/seance_03.md.
+
+  Comme pour les commits précédents, chaque message se termine par la ligne
+  Co-Authored-By: Claude.
+
+✻ Sautéed for 45s · done 15:15
+
+※ recap: La brique 8 (intervalle de confiance à 95 %) est terminée : tests verts, essai réel autorisé, EVIDENCE.md et le journal de la séance 3 commités. Prochaine étape : choisir ce qu'on attaque ensuite, par exemple la brique 9 (comparaison mesurée). (disable recaps in /config)
