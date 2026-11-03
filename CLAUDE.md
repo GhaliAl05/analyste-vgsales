@@ -1,7 +1,7 @@
 # Règles du projet (valables pour toutes les sessions)
 
 ## Dépendances
-- Python bibliothèque standard uniquement (csv, json, urllib, statistics, re, math). Pas de pandas.
+- Python bibliothèque standard uniquement (csv, json, urllib, statistics, re, math, os). Pas de pandas.
 - Seule dépendance externe autorisée : pytest.
 
 ## Style de code
