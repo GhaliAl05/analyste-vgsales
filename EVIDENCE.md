@@ -55,4 +55,24 @@ python nettoyer.py
 
 ## Brique 8 — Incertitude
 
+**Ce que je montre** : un intervalle de confiance à 95 % de la moyenne (moyenne ± 1,96 × écart-type / racine(n), au moins 30 jeux), intégré à l'outil comme 6e statistique.
+- Le modèle choisit de lui-même la statistique `intervalle_confiance` quand la question porte sur un intervalle.
+- L'arbitre autorise les bornes et le niveau 95, car ce sont des valeurs renvoyées par l'outil.
+- Résultat réel : moyenne des ventes Sports 0,568 million, intervalle [0,482 ; 0,654] sur 2304 jeux.
+
+**Fichiers** : `stats.py`, `outil.py`, `arbitre.py`, `tests/test_outil.py`, `tests/test_arbitre.py`, `traces/trace_2026-11-03_15-09-45.json`.
+
+**Commandes pour reproduire** :
+```
+.venv\Scripts\python -m pytest -q
+.venv\Scripts\python agent.py "Quel est l'intervalle de confiance à 95 % de la moyenne des ventes mondiales des jeux de genre Sports ?"
+```
+
+**Résultat attendu** : 35 tests passés ; appel de `calculer("intervalle_confiance", "Global_Sales", "Genre", "Sports")`, bornes 0.482 et 0.654 reprises dans la réponse finale, avec `"arbitre": {"autorisee": true, ...}` dans la trace.
+
+**Ce que ces données ne permettent pas de conclure** :
+1. L'intervalle suppose un échantillon tiré au hasard ; or le fichier ne contient que les jeux recensés par VGChartz (avec un seuil annoncé de 100 000 exemplaires qui n'est pas respecté). Il mesure la variabilité statistique, pas les biais de collecte, et ne dit rien des jeux absents du fichier.
+2. La moyenne n'est pas le jeu typique : les ventes sont très inégales. Le jeu Sports le plus vendu, Wii Sports (Wii, 2006), atteint 82,74 millions, alors que la médiane des jeux Sports n'est que de 0,22 million : la moitié des jeux vendent moins de 0,22 million, bien en dessous de la moyenne de 0,568 tirée vers le haut par quelques gros succès.
+3. Ces chiffres décrivent une association, pas une cause : ils ne montrent pas que le genre Sports fait vendre davantage.
+
 ## Brique 9 — Comparaison mesurée
